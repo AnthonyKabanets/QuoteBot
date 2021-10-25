@@ -3,19 +3,24 @@ from discord.ext import commands
 import logging
 import sqlite3
 import datetime
+import json
+
+with open("config.json") as file:
+    config = json.load(file)
 
 logging.basicConfig(level=logging.INFO)
 
-bot = commands.Bot(command_prefix='$')
+bot = commands.Bot(command_prefix=config["Prefix"])
+#prefix is $
 
-con = sqlite3.connect('quotes.db')
+con = sqlite3.connect(config['Quotes'])
 cur = con.cursor()
 
 cur.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='quotes' ''')
 
 if(cur.fetchone()[0] == 0) : {
     cur.execute('''CREATE TABLE quotes 
-                    #(quote text, quoteAuthor text, quoteRecorder text, date date)''')
+                    (quote text, quoteAuthor text, quoteRecorder text, date date)''')
 }
 
 @bot.event
@@ -59,6 +64,14 @@ async def quote(ctx, quoteAuthor, *, quote = None):
         #Instead of reaction, send message. Then, if someone reacts with 🚫, remove that quote.
         #Or just use DB viewer to personally delete mistaken quotes.
 
+#restart the bot
+@bot.command(name ="restart", aliases = ["r"], help = "Restarts the bot.")
+async def restart(ctx): #ctx passes an argument into the body. a "context" (ctx)
+    #sends react to message as confirmation to restart
+    await ctx.message.add_reaction("✅")
+    await bot.close()
 
-
-bot.run('your key here')
+bot.run(config["Token"], bot=True, reconnect=True)
+#end command lets the client know that it is a bot
+#also if connection drops, bot will attempt to reconnect
+#saves trouble of manually restarting in the event of connection loss
