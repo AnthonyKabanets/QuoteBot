@@ -20,55 +20,87 @@ cur.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND nam
 
 if(cur.fetchone()[0] == 0) : {
     cur.execute('''CREATE TABLE quotes 
-                    (quote text, quoteAuthor text, quoteRecorder text, date date)''')
+                    (id integer NOT NULL PRIMARY KEY, 
+                    quote text NOT NULL, 
+                    quoteAuthor text NOT NULL, 
+                    quoteRecorder text NOT NULL, 
+                    date date, 
+                    fileExtension text)''')
 }
+
+async def printQuote(ctx, output): #output comes from cur.fetchone()
+    if(output is None):
+        await ctx.channel.send("No valid quotes found.")
+    else:
+        outputString = content=output[1] + '\n-' + output[2] + ', ' + output[4] + ", ID: " + str(output[0])
+        if(output[5]):
+            file = discord.File(config["Attachments"] + str(output[0]) + '.' + output[5])
+            await ctx.channel.send(file = file, content=outputString)
+        else:
+            await ctx.channel.send(outputString)
+#[0][0] takes the first result from fetchmany, and selects the column out of the row.
 
 @bot.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(bot))
-
-#@bot.event
-#async def on_message(message):
-    #if message.author == bot.user:
-        #return
-
-    #if message.content.startswith('$hello'):
-        #await message.channel.send('Hello!')
 
 @bot.command()
 async def test(ctx):
     await ctx.channel.send('Hello World!')
 
 @bot.command()
+async def quotedCount(ctx, quoteAuthor):
+    cur.execute("SELECT COUNT() FROM quotes WHERE quoteAuthor = :name", {"name": quoteAuthor})
+    quoteCount = cur.fetchone()[0]
+    await ctx.channel.send(quoteAuthor + " has " + str(quoteCount) + " quotes.")
+
+@bot.command()
+async def quoterCount(ctx, quoteRecorder):
+    cur.execute("SELECT COUNT() FROM quotes WHERE quoteRecorder = :name", {"name": quoteRecorder})
+    quoteCount = cur.fetchone()[0]
+    await ctx.channel.send(quoteRecorder + " has recorded " + str(quoteCount) + " quotes.")
+
+@bot.command()
+async def totalQuotes(ctx):
+    cur.execute("SELECT COUNT() FROM quotes")
+    quoteCount = cur.fetchone()[0]
+    await ctx.channel.send(str(quoteCount) + " quotes recorded.")
+
+@bot.command()
+async def idQuote(ctx, id):
+    cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
+    output = cur.fetchone()
+    await printQuote(ctx, output)
+
+@bot.command()
 async def quote(ctx, quoteAuthor, *, quote = None):
     if(quote is None):
         cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name ORDER BY RANDOM() LIMIT 1", {"name": quoteAuthor})
         output = cur.fetchone()
-        if(output is None):
-            await ctx.channel.send("No valid quotes found.")
-        else:
-            await ctx.channel.send(output[0] + '\n-' + output[1])
-        #[0][0] takes the first result from the command, and selects the column out of the row.
+        await printQuote(ctx, output)
     else:
+
         date = datetime.date.today()
-        quote_list = [
-            (quote, quoteAuthor, ctx.author.name, date)
-        ]
-        print(quote)
-        print(quoteAuthor)
-        print(ctx.author.name)
-        print(date)
-        cur.executemany("INSERT INTO quotes VALUES (?, ?, ?, ?)", quote_list)
+        if(ctx.message.attachments):
+            fileExtension = ctx.message.attachments[0].filename
+            fileExtension = fileExtension.rsplit('.', 1)[-1]
+        else:
+           fileExtension = None
+        
+        cur.execute("INSERT INTO quotes(quote, quoteAuthor, quoteRecorder, date, fileExtension) VALUES (?, ?, ?, ?, ?)", (quote, quoteAuthor, ctx.author.name, date, fileExtension))
+
+        if(ctx.message.attachments):
+            await ctx.message.attachments[0].save(config["Attachments"] + str(cur.lastrowid) + '.' + fileExtension)
+
         con.commit()
         await ctx.message.add_reaction('✅')
-        #Instead of reaction, send message. Then, if someone reacts with 🚫, remove that quote.
-        #Or just use DB viewer to personally delete mistaken quotes.
 
 #restart the bot
 @bot.command(name ="restart", aliases = ["r"], help = "Restarts the bot.")
 async def restart(ctx): #ctx passes an argument into the body. a "context" (ctx)
     #sends react to message as confirmation to restart
     await ctx.message.add_reaction("✅")
+    con.close()
     await bot.close()
 
 bot.run(config["Token"], bot=True, reconnect=True)
