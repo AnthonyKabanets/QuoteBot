@@ -2,6 +2,7 @@
 A simple Discord bot using Python and SQLite3, for recording quotes.
 
 Commands
+
 $quotedCount username
 Outputs the amount of times a user has been quoted.
 
