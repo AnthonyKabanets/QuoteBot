@@ -24,7 +24,7 @@ cur.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND nam
 
 if(cur.fetchone()[0] == 0) : {
     cur.execute('''CREATE TABLE quotes 
-                    (id integer NOT NULL PRIMARY KEY, 
+                    (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, 
                     quote text, 
                     quoteAuthor text NOT NULL, 
                     quoteRecorder text NOT NULL, 
@@ -57,28 +57,28 @@ async def quotedCount(ctx, quoteAuthor):
     cur.execute("SELECT COUNT() FROM quotes WHERE quoteAuthor = :name", {"name": quoteAuthor})
     quoteCount = cur.fetchone()[0]
     await ctx.channel.send(quoteAuthor + " has " + str(quoteCount) + " quotes.")
-    await ctx.message.add_reaction(emoji)
+    #await ctx.message.add_reaction(emoji)
 
 @bot.command()
 async def quoterCount(ctx, quoteRecorder):
     cur.execute("SELECT COUNT() FROM quotes WHERE quoteRecorder = :name", {"name": quoteRecorder})
     quoteCount = cur.fetchone()[0]
     await ctx.channel.send(quoteRecorder + " has recorded " + str(quoteCount) + " quotes.")
-    await ctx.message.add_reaction(emoji)
+    #await ctx.message.add_reaction(emoji)
 
 @bot.command()
 async def totalQuotes(ctx):
     cur.execute("SELECT COUNT() FROM quotes")
     quoteCount = cur.fetchone()[0]
     await ctx.channel.send(str(quoteCount) + " quotes recorded.")
-    await ctx.message.add_reaction(emoji)
+    #await ctx.message.add_reaction(emoji)
 
 @bot.command()
 async def idQuote(ctx, id):
     cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
     output = cur.fetchone()
     await printQuote(ctx, output)
-    await ctx.message.add_reaction(emoji)
+    #await ctx.message.add_reaction(emoji)
 
 @bot.command()
 async def quote(ctx, quoteAuthor, *, quote = None):
