@@ -24,7 +24,7 @@ cur.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND nam
 
 if(cur.fetchone()[0] == 0) : {
     cur.execute('''CREATE TABLE quotes 
-                    (id integer NOT NULL PRIMARY KEY AUTOINCREMENT, 
+                    (id integer NOT NULL PRIMARY KEY, 
                     quote text, 
                     quoteAuthor text NOT NULL, 
                     quoteRecorder text NOT NULL, 
