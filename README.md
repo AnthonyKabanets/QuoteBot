@@ -1,8 +1,12 @@
 # QuoteBot
 A simple Discord bot using Python and SQLite3, for recording quotes.
 
-Commands
+Quotes are saved in a .db file. The name of this file can be set in config.json
 
+The directory attachments are saved in can be set in config.json
+
+
+Commands
 
 $quotedCount username
 
