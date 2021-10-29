@@ -2,5 +2,6 @@
     "Prefix":"enter prefix here",
     "Token": "enter token here",
     "Quotes": "enter db name here",
-    "Attachments": "enter attachments directory here"
+    "Attachments": "enter attachments directory here",
+	"Permissions Role": "insert role for deleting quotes here"
 }

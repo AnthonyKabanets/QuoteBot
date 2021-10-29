@@ -3,6 +3,7 @@ from discord.emoji import Emoji
 from discord.ext import commands
 import logging
 import sqlite3
+import os
 import datetime
 import json
 
@@ -37,7 +38,7 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
         await ctx.channel.send("No valid quotes found.")
     else:
         outputString = content=str(output[1] or '') + '\n-' + output[2] + ', ' + output[4] + ", ID: " + str(output[0])
-        if(output[5]):
+        if(output[5]): #output[5] is file extension column.
             file = discord.File(config["Attachments"] + str(output[0]) + '.' + output[5])
             await ctx.channel.send(file = file, content=outputString)
         else:
@@ -89,11 +90,11 @@ async def quote(ctx, quoteAuthor, *, quote = None):
     else:
         date = datetime.date.today()
         if(ctx.message.attachments):
-            if(ctx.message.attachments[0].size > 8000000):
+            if(ctx.message.attachments[0].size > 8000000): #Capped at 8 MB. Bot cannot send files larger than 8 MB.
                 await ctx.message.send("This file is too large.")
                 return
             fileExtension = ctx.message.attachments[0].filename
-            fileExtension = fileExtension.rsplit('.', 1)[-1]
+            fileExtension = fileExtension.rsplit('.', 1)[-1] #All text after last dot. If filename has no dot, entire filename will be saved. This is bad.
         else:
            fileExtension = None
         
@@ -101,10 +102,37 @@ async def quote(ctx, quoteAuthor, *, quote = None):
 
         if(ctx.message.attachments):
             await ctx.message.attachments[0].save(config["Attachments"] + str(cur.lastrowid) + '.' + fileExtension)
+            #Attachment filename is based on unique id of the quote.
+            #Saved files will never have the same filename.
+            #Only one attachment can be saved per quote.
 
         con.commit()
 
     await ctx.message.add_reaction(emoji)
+    await ctx.channel.send("Quote #" + str(cur.lastrowid) + " saved.")
+
+@bot.command()
+@commands.has_role(config["Permissions Role"])
+async def deleteQuote (ctx, id):
+    await ctx.channel.send("Deleting quote...")
+    await idQuote(ctx, id)
+    cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
+    output = cur.fetchone()
+    if(output is None):
+        return
+
+    if(output[5]): #Deleting saved attachment.
+        os.remove(config["Attachments"] + str(id) + "." + output[5])
+
+    cur.execute("DELETE FROM quotes WHERE id = :id", {"id": id})
+    con.commit()
+    await ctx.message.add_reaction(emoji)
+    #id is primary key, this should never delete more than one quote.
+
+@bot.event
+async def on_command_error(ctx, error):
+    if(isinstance(error, commands.MissingRole)):
+        await ctx.send("Required role missing.")
 
 #restart the bot
 @bot.command(name ="restart", aliases = ["r"], help = "Restarts the bot.")
