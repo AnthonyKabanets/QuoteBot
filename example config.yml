@@ -1,0 +1,37 @@
+# Heyyy this is a config file for python
+# Comments in here are nice
+# Define objects or pertinent info with their name
+# Followed by said thing (usually in "quotation marks")
+
+# Bot token goes here
+Token: 
+
+#Prefix that the bot uses for commands
+Prefix: 
+
+#Quotes database
+Quotes: 
+
+#Attachments directory
+Attachments: 
+
+#Role that is defined as being able to delete quotes (within discord client) if needed
+PermRole: 
+
+# The uhhh "Playing ___" status of the bot
+# {prefix} is a placeholder for the command prefix (it should be "watching" here)
+Presence: 
+
+#ID of the text channel that all log messages get sent, if needed
+#LC-ID: put your channel id here
+#You can do more than one channel, just denote it as the above
+
+#template embed settings if you want the bot to read-out a prompt upon start-up
+#Embed Settings:
+#  Color:
+#    r: 0
+#    g: 0
+#    b: 0
+#  Footer:
+#    Text: text goes here
+#    Icon URL: 
