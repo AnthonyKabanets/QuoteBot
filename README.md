@@ -34,3 +34,9 @@ $quote username [quote] [attachment]
 If neither quote or attachment are included, this will output a random quote from username.
 
 If either quote or attachment are included, this will save a new quote with that quote and attachment.
+
+$deleteQuote id
+
+Deletes a quote with the chosen id. Deletes saved attachments as well.
+
+Requires a role to use. Required role is set in config.json
