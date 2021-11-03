@@ -114,9 +114,9 @@ async def quote(ctx, quoteAuthor, *, quote = None):
             #Only one attachment can be saved per quote.
 
         con.commit()
+        await ctx.channel.send("Quote #" + str(cur.lastrowid) + " saved.")
 
     await ctx.message.add_reaction(emoji)
-    await ctx.channel.send("Quote #" + str(cur.lastrowid) + " saved.")
 
 @bot.command()
 @commands.has_role(config["PermRole"])
