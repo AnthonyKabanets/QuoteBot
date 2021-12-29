@@ -2,6 +2,8 @@
 # Comments in here are nice
 # Define objects or pertinent info with their name
 # Followed by said thing (usually in "quotation marks")
+# do note that you'll need to install the ruamel dependency for this config (ruamel.yaml)
+# if you don't want to do that, .json works just fine
 
 # Bot token goes here
 Token: 
