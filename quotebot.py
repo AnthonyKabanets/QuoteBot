@@ -5,16 +5,12 @@ import logging
 import sqlite3
 import os
 import datetime
+import json
+
 from discord.reaction import Reaction
 
-#ruamel is just a nicer json tbh
-#will need to install library for it first, however
-#pip install ruamel.yaml
-from ruamel.yaml import YAML
-yaml = YAML()
-
-with open("./config.yml", "r", encoding = "utf-8") as file: #utf-8 as standard
-    config = yaml.load(file)
+with open("config.json") as file:
+    config = json.load(file)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -26,6 +22,7 @@ con = sqlite3.connect(config['Quotes'])
 cur = con.cursor()
 
 cur.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='quotes' ''')
+lastId = None
 
 if(cur.fetchone()[0] == 0) : {
     cur.execute('''CREATE TABLE quotes 
@@ -42,6 +39,8 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
         await ctx.channel.send("No valid quotes found.")
     else:
         outputString = content=str(output[1] or '') + '\n-' + output[2] + ', ' + output[4] + ", ID: " + str(output[0])
+        global lastId 
+        lastId = output[0]
         if(output[5]): #output[5] is file extension column.
             file = discord.File(config["Attachments"] + str(output[0]) + '.' + output[5])
             await ctx.channel.send(file = file, content=outputString)
@@ -52,9 +51,6 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
 @bot.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(bot))
-    #sets status of game to "listening"
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=config["Presence"]))
-    #await bot.change_presence(activity=config["Presence"]) apparently you cant just set a status without some extra steps. wip - rahat
 
 @bot.command()
 async def test(ctx):
@@ -91,7 +87,13 @@ async def idQuote(ctx, id):
 @bot.command()
 async def quote(ctx, quoteAuthor, *, quote = None):
     if(quote is None and not ctx.message.attachments):
-        cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name ORDER BY RANDOM() LIMIT 1", {"name": quoteAuthor})
+        cur.execute("SELECT COUNT() FROM quotes WHERE quoteAuthor = :name", {"name": quoteAuthor})
+        numQuotes = cur.fetchone()[0]
+        if(lastId and numQuotes > 1): #Exlude most recently quoted message, to prevent repeat quotes. lastId is a global variable and is assigned in printQuote()
+            cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name AND NOT id = :lastId ORDER BY RANDOM() LIMIT 1", {"name": quoteAuthor, "lastId": lastId})
+        else:
+            cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name ORDER BY RANDOM() LIMIT 1", {"name": quoteAuthor})
+
         output = cur.fetchone()
         await printQuote(ctx, output)
     else:
@@ -119,7 +121,7 @@ async def quote(ctx, quoteAuthor, *, quote = None):
     await ctx.message.add_reaction(emoji)
 
 @bot.command()
-@commands.has_role(config["PermRole"])
+@commands.has_role(config["Permissions Role"])
 async def deleteQuote (ctx, id):
     await ctx.channel.send("Deleting quote...")
     await idQuote(ctx, id)
@@ -140,6 +142,8 @@ async def deleteQuote (ctx, id):
 async def on_command_error(ctx, error):
     if(isinstance(error, commands.MissingRole)):
         await ctx.send("Required role missing.")
+    elif(isinstance(error, commands.CommandNotFound)):
+        await ctx.send("Command not found.")
 
 #restart the bot
 @bot.command(name ="restart", aliases = ["r"], help = "Restarts the bot.")
