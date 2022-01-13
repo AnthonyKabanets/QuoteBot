@@ -5,12 +5,16 @@ import logging
 import sqlite3
 import os
 import datetime
-import json
-
 from discord.reaction import Reaction
 
-with open("config.json") as file:
-    config = json.load(file)
+#ruamel is just a nicer json tbh
+#will need to install library for it first, however
+#pip install ruamel.yaml
+from ruamel.yaml import YAML
+yaml = YAML()
+
+with open("./config.yml", "r", encoding = "utf-8") as file: #utf-8 as standard
+    config = yaml.load(file)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -51,6 +55,9 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
 @bot.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(bot))
+    #sets status of game to "listening"
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=config["Presence"]))
+    #await bot.change_presence(activity=config["Presence"]) apparently you cant just set a status without some extra steps. wip - rahat
 
 @bot.command()
 async def test(ctx):
@@ -93,7 +100,7 @@ async def quote(ctx, quoteAuthor, *, quote = None):
             cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name AND NOT id = :lastId ORDER BY RANDOM() LIMIT 1", {"name": quoteAuthor, "lastId": lastId})
         else:
             cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name ORDER BY RANDOM() LIMIT 1", {"name": quoteAuthor})
-
+        
         output = cur.fetchone()
         await printQuote(ctx, output)
     else:
@@ -121,7 +128,7 @@ async def quote(ctx, quoteAuthor, *, quote = None):
     await ctx.message.add_reaction(emoji)
 
 @bot.command()
-@commands.has_role(config["Permissions Role"])
+@commands.has_role(config["PermRole"])
 async def deleteQuote (ctx, id):
     await ctx.channel.send("Deleting quote...")
     await idQuote(ctx, id)
@@ -142,8 +149,6 @@ async def deleteQuote (ctx, id):
 async def on_command_error(ctx, error):
     if(isinstance(error, commands.MissingRole)):
         await ctx.send("Required role missing.")
-    elif(isinstance(error, commands.CommandNotFound)):
-        await ctx.send("Command not found.")
 
 #restart the bot
 @bot.command(name ="restart", aliases = ["r"], help = "Restarts the bot.")
