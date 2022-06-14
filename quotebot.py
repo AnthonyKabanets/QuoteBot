@@ -71,6 +71,16 @@ async def quotedCount(ctx, quoteAuthor):
     #await ctx.message.add_reaction(emoji)
 
 @bot.command()
+async def quoteRank(ctx, numQuotes):
+    cur.execute("SELECT quoteAuthor, COUNT(quoteAuthor) FROM quotes GROUP BY quoteAuthor ORDER BY COUNT(quoteAuthor) DESC LIMIT :numQuotes", {"numQuotes": numQuotes})
+    rows = cur.fetchall()
+    tempString = ""
+    for row in rows:
+        tempString += ("Name: " + str(row[0]) + "\n    Quotes: " + str(row[1]) + "\n")
+    
+    await ctx.channel.send(tempString)
+
+@bot.command()
 async def quoterCount(ctx, quoteRecorder):
     cur.execute("SELECT COUNT() FROM quotes WHERE quoteRecorder = :name", {"name": quoteRecorder})
     quoteCount = cur.fetchone()[0]
