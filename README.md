@@ -8,10 +8,13 @@ The directory attachments are saved in can be set in config.json
 
 Commands
 
-$quotedCount username
+$quotedCount [username]
 
 Outputs the amount of times a user has been quoted.
 
+$quoteRank [number]
+
+Outputs the first [number] of people with the most quotes, as well as how many quotes each of those people have attributed to them.
 
 $quoterCount username
 
@@ -24,7 +27,7 @@ $totalQuotes
 Outputs the total amount of quotes saved.
 
 
-$idQuote number
+$idQuote [number]
 
 Outputs a quote with the specified unique ID.
 
