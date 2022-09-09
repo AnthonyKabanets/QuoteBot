@@ -18,7 +18,7 @@ Quotes:
 Attachments: 
 
 #Role that is defined as being able to delete quotes (within discord client) if needed
-PermRole: 
+Permissions Role: 
 
 # The uhhh "Playing ___" status of the bot
 # {prefix} is a placeholder for the command prefix (it should be "watching" here)
