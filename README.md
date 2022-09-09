@@ -16,7 +16,7 @@ $quoteRank [number]
 
 Outputs the first [number] of people with the most quotes, as well as how many quotes each of those people have attributed to them.
 
-$quoterCount username
+$quoterCount [username]
 
 
 Outputs the amount of times a user has added quotes.
@@ -32,14 +32,22 @@ $idQuote [number]
 Outputs a quote with the specified unique ID.
 
 
-$quote username [quote] [attachment]
+$addQuote [name] [quote] [attachment]
 
-If neither quote or attachment are included, this will output a random quote from username.
+Save a quote with that quote and/or attachment. At least one of quote or attachment must be included.
 
-If either quote or attachment are included, this will save a new quote with that quote and attachment.
+Attachments (smaller than 8 MB) are allowed.
+
+
+$quote [name] [numQuotes]
+
+Output a random quote from username. 
+
+numQuotes specifies how many quotes to send. Optional, default is 1. Min is 1, max is 20.
+
 
 $deleteQuote id
 
 Deletes a quote with the chosen id. Deletes saved attachments as well.
 
-Requires a role to use. Required role is set in config.json
+Requires a role to use. Required role is set in config file.
