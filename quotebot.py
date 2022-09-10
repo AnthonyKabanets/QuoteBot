@@ -42,13 +42,17 @@ if(cur.fetchone()[0] == 0) : {
 async def printQuote(ctx, output): #output comes from cur.fetchone()
     if(output is None):
         await ctx.channel.send("No valid quotes found.")
-    else:
-        outputString = content=str(output[1] or '') + '\n-' + output[2] + ', ' + output[4] + ", ID: " + str(output[0])
+        return
+
+    outputString = content=str(output[1] or '') + '\n-' + output[2] + ', ' + output[4] + ", ID: " + str(output[0])
+    try:
         if(output[5]): #output[5] is file extension column.
             file = discord.File(config["Attachments"] + str(output[0]) + '.' + output[5])
-            await ctx.channel.send(file = file, content=outputString)
+            await ctx.channel.send(file = file, content=outputString)       
         else:
             await ctx.channel.send(outputString)
+    except FileNotFoundError: 
+        await ctx.channel.send("Attachment not found.")
 #[0][0] takes the first result from fetchmany, and selects the column out of the row.
 
 @bot.event
