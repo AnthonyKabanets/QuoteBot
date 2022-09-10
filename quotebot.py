@@ -52,7 +52,7 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
         else:
             await ctx.channel.send(outputString)
     except FileNotFoundError: 
-        await ctx.channel.send("Attachment not found.")
+        await ctx.channel.send("Attachment not found. Quote ID: " + str(output[0]))
 #[0][0] takes the first result from fetchmany, and selects the column out of the row.
 
 @bot.event
