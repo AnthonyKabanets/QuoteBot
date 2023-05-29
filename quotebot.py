@@ -136,26 +136,29 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
 @bot.command()
 async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags):
     #cur.execute("SELECT COUNT() FROM quotes WHERE quoteAuthor = :name", {"name": quoteAuthor})
-    if(numQuotes < 1):
-        numQuotes = 1
-    if(numQuotes > 20):
-        numQuotes = 20 #Min is 1, max is 20.
-    
-    dateMin = datetime.strptime(flags.dateStart, flags.dateFormat).date()
-    dateMax = datetime.strptime(flags.dateEnd, flags.dateFormat).date()
-    cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name AND id > :idMin AND id < :idMax AND date > :dateMin AND date < :dateMax ORDER BY RANDOM() LIMIT :numQuotes", 
-                {"name": quoteAuthor, "numQuotes": numQuotes, 
-                 "idMin": flags.idMin, "idMax": flags.idMax,
-                 "dateMin": dateMin, "dateMax": dateMax})
-    output = cur.fetchall()
+    try:
+        if(numQuotes < 1):
+            numQuotes = 1
+        if(numQuotes > 20):
+            numQuotes = 20 #Min is 1, max is 20.
+        
+        dateMin = datetime.strptime(flags.dateStart, flags.dateFormat).date()
+        dateMax = datetime.strptime(flags.dateEnd, flags.dateFormat).date()
+        cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name AND id > :idMin AND id < :idMax AND date > :dateMin AND date < :dateMax ORDER BY RANDOM() LIMIT :numQuotes", 
+                    {"name": quoteAuthor, "numQuotes": numQuotes, 
+                    "idMin": flags.idMin, "idMax": flags.idMax,
+                    "dateMin": dateMin, "dateMax": dateMax})
+        output = cur.fetchall()
 
-    if(output):
-        for quote in output:
-            await printQuote(ctx, quote)
-            time.sleep(0.3)
-    else:
-        await ctx.channel.send("No quotes found.")
-    await ctx.message.add_reaction(emoji)
+        if(output):
+            for quote in output:
+                await printQuote(ctx, quote)
+                time.sleep(0.3)
+        else:
+            await ctx.channel.send("No quotes found.")
+        await ctx.message.add_reaction(emoji)
+    except Exception as e:
+        print(e)
 
 @bot.command()
 @commands.has_role(config["Permissions Role"])
