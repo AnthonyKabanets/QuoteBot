@@ -4,8 +4,9 @@ from discord.ext import commands
 import logging
 import sqlite3
 import os
-import datetime
+from datetime import datetime
 import time
+import quoteflags
 from discord.reaction import Reaction
 
 #ruamel is just a nicer json tbh
@@ -53,7 +54,7 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
             await ctx.channel.send(outputString)
     except FileNotFoundError: 
         await ctx.channel.send("Attachment not found. Quote ID: " + str(output[0]))
-#[0][0] takes the first result from fetchmany, and selects the column out of the row.
+#[0][0] takes the zeroth result from fetchmany, and selects the zeroth column out of the row.
 
 @bot.event
 async def on_ready():
@@ -133,14 +134,19 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
     await ctx.message.add_reaction(emoji)
 
 @bot.command()
-async def quote(ctx, quoteAuthor, numQuotes = 1):
+async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags):
     #cur.execute("SELECT COUNT() FROM quotes WHERE quoteAuthor = :name", {"name": quoteAuthor})
     if(numQuotes < 1):
         numQuotes = 1
     if(numQuotes > 20):
         numQuotes = 20 #Min is 1, max is 20.
     
-    cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name ORDER BY RANDOM() LIMIT :numQuotes", {"name": quoteAuthor, "numQuotes": numQuotes})
+    dateMin = datetime.strptime(flags.dateStart, flags.dateFormat).date()
+    dateMax = datetime.strptime(flags.dateEnd, flags.dateFormat).date()
+    cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name AND id > :idMin AND id < :idMax AND date > :dateMin AND date < :dateMax ORDER BY RANDOM() LIMIT :numQuotes", 
+                {"name": quoteAuthor, "numQuotes": numQuotes, 
+                 "idMin": flags.idMin, "idMax": flags.idMax,
+                 "dateMin": dateMin, "dateMax": dateMax})
     output = cur.fetchall()
 
     if(output):
