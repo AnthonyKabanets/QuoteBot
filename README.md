@@ -39,11 +39,16 @@ Save a quote with that quote and/or attachment. At least one of quote or attachm
 Attachments (smaller than 8 MB) are allowed.
 
 
-$quote [name] [numQuotes]
+$quote [name] [numQuotes] [flags]
 
 Output a random quote from username. 
 
 numQuotes specifies how many quotes to send. Optional, default is 1. Min is 1, max is 20.
+
+flags: Includes dateStart, dateEnd, dateFormat, idMin, idMax
+  Default format for dates is Year/Month/Day. Does not include hours or minutes.
+
+Example: $quote John 2 dateStart:2022/8/1 dateEnd:2022/9/2
 
 
 $deleteQuote id
