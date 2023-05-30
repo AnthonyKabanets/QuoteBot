@@ -4,7 +4,7 @@ from discord.ext import commands
 import logging
 import sqlite3
 import os
-from datetime import datetime
+import datetime
 import time
 import quoteflags
 from discord.reaction import Reaction
@@ -107,7 +107,11 @@ async def idQuote(ctx, id):
 
 @bot.command()
 async def addQuote(ctx, quoteAuthor, *, quote = None):
-    date = datetime.date.today()
+    try:
+        date = datetime.date.today()
+    except Exception as e:
+        print(e)
+    
     if ctx.message.attachments:
         if(ctx.message.attachments[0].size > 8000000): #Capped at 8 MB. Bot cannot send files larger than 8 MB.
             await ctx.message.send("This file is too large.")
@@ -142,8 +146,8 @@ async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags
         if(numQuotes > 20):
             numQuotes = 20 #Min is 1, max is 20.
         
-        dateMin = datetime.strptime(flags.dateStart, flags.dateFormat).date()
-        dateMax = datetime.strptime(flags.dateEnd, flags.dateFormat).date()
+        dateMin = datetime.datetime.strptime(flags.dateStart, flags.dateFormat).date()
+        dateMax = datetime.datetime.strptime(flags.dateEnd, flags.dateFormat).date()
         cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name AND id > :idMin AND id < :idMax AND date > :dateMin AND date < :dateMax ORDER BY RANDOM() LIMIT :numQuotes", 
                     {"name": quoteAuthor, "numQuotes": numQuotes, 
                     "idMin": flags.idMin, "idMax": flags.idMax,
