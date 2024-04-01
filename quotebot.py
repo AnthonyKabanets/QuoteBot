@@ -11,6 +11,7 @@ import time
 
 import adapter
 import quoteflags
+import alias
 
 #ruamel is just a nicer json tbh
 #will need to install library for it first, however
@@ -29,6 +30,7 @@ bot = commands.Bot(command_prefix=config["Prefix"],
     intents = botIntents,
     activity=discord.Activity(type=discord.ActivityType.watching, name=config["Presence"]))
 emoji = '✅'
+aliasManager = alias.Alias(bot)
 
 con = sqlite3.connect(config['Quotes'])
 cur = con.cursor()
@@ -64,13 +66,11 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
 @bot.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(bot))
-
-@bot.command()
-async def test(ctx):
-    await ctx.channel.send('Hello World!')
+    await bot.add_cog(aliasManager) #Adding commands from adapter.py
 
 @bot.command()
 async def quotedCount(ctx, quoteAuthor):
+    quoteAuthor = aliasManager.fetchAlias(quoteAuthor)[1]
     cur.execute("SELECT COUNT() FROM quotes WHERE quoteAuthor = :name", {"name": quoteAuthor})
     quoteCount = cur.fetchone()[0]
     await ctx.channel.send(quoteAuthor + " has " + str(quoteCount) + " quotes.")
@@ -109,6 +109,7 @@ async def idQuote(ctx, id):
 
 @bot.command()
 async def addQuote(ctx, quoteAuthor, *, quote = None):
+    quoteAuthor = aliasManager.fetchAlias(quoteAuthor)[1]
     try:
         date = datetime.date.today()
     except Exception as e:
@@ -141,8 +142,8 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
 
 @bot.command()
 async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags):
-    #cur.execute("SELECT COUNT() FROM quotes WHERE quoteAuthor = :name", {"name": quoteAuthor})
     try:
+        quoteAuthor = aliasManager.fetchAlias(quoteAuthor)[1]
         if(numQuotes < 1):
             numQuotes = 1
         if(numQuotes > 20):
