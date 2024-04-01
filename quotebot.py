@@ -1,13 +1,16 @@
 import discord
 from discord.emoji import Emoji
 from discord.ext import commands
+from discord.reaction import Reaction
+
 import logging
 import sqlite3
 import os
 import datetime
 import time
+
+import adapter
 import quoteflags
-from discord.reaction import Reaction
 
 #ruamel is just a nicer json tbh
 #will need to install library for it first, however
