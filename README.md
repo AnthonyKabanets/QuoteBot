@@ -18,7 +18,6 @@ Outputs the first [number] of people with the most quotes, as well as how many q
 
 $quoterCount [username]
 
-
 Outputs the amount of times a user has added quotes.
 
 
@@ -56,3 +55,8 @@ $deleteQuote id
 Deletes a quote with the chosen id. Deletes saved attachments as well.
 
 Requires a role to use. Required role is set in config file.
+
+
+$addAlias inputName outputName
+
+Adds an alias to inputName. Any quotes requested or added for inputName will instead be redirected to outputName.
