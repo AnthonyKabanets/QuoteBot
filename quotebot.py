@@ -25,7 +25,9 @@ logging.basicConfig(level=logging.INFO)
 
 botIntents = discord.Intents.default()
 botIntents.message_content = True
-bot = commands.Bot(command_prefix=config["Prefix"], intents = botIntents)
+bot = commands.Bot(command_prefix=config["Prefix"], 
+    intents = botIntents,
+    activity=discord.Activity(type=discord.ActivityType.watching, name=config["Presence"]))
 emoji = '✅'
 
 con = sqlite3.connect(config['Quotes'])
@@ -62,9 +64,6 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
 @bot.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(bot))
-    #sets status of game to "listening"
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=config["Presence"]))
-    #await bot.change_presence(activity=config["Presence"]) apparently you cant just set a status without some extra steps. wip - rahat
 
 @bot.command()
 async def test(ctx):
