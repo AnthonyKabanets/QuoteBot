@@ -12,6 +12,7 @@ import time
 import adapter
 import quoteflags
 import alias
+import constants
 
 #ruamel is just a nicer json tbh
 #will need to install library for it first, however
@@ -52,7 +53,7 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
         await ctx.channel.send("No valid quotes found.")
         return
 
-    outputString = content=str(output[1] or '') + '\n-' + output[2] + ', ' + output[4] + ", ID: " + str(output[0])
+    outputString = str(output[1] or '') + '\n-' + output[2] + ', ' + output[4] + ", ID: " + str(output[0])
     try:
         if(output[5]): #output[5] is file extension column.
             file = discord.File(config["Attachments"] + str(output[0]) + '.' + output[5])
@@ -116,7 +117,7 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
         print(e)
     
     if ctx.message.attachments:
-        if(ctx.message.attachments[0].size > 8000000): #Capped at 8 MB. Bot cannot send files larger than 8 MB.
+        if(ctx.message.attachments[0].size > constants.MAX_FILESIZE): #Capped at 8 MB. Bot cannot send files larger than 8 MB.
             await ctx.message.send("This file is too large.")
             return
 
@@ -144,10 +145,7 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
 async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags):
     try:
         quoteAuthor = aliasManager.fetchAlias(quoteAuthor)[1]
-        if(numQuotes < 1):
-            numQuotes = 1
-        if(numQuotes > 20):
-            numQuotes = 20 #Min is 1, max is 20.
+        numQuotes = min(max(numQuotes, constants.MIN_REQUEST), constants.MAX_REQUEST) #Min is 1, max is 20.
         
         dateMin = datetime.datetime.strptime(flags.dateStart, flags.dateFormat).date()
         dateMax = datetime.datetime.strptime(flags.dateEnd, flags.dateFormat).date()
