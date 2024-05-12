@@ -60,3 +60,5 @@ Requires a role to use. Required role is set in config file.
 $addAlias inputName outputName
 
 Adds an alias to inputName. Any quotes requested or added for inputName will instead be redirected to outputName.
+
+NOTE: This will not change any existing quotes registered to inputName.

@@ -1,4 +1,4 @@
-config.json
-config.yaml
-config.yml
+config.*
 *.db
+__pycache__
+Attachments
