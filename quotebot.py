@@ -8,6 +8,7 @@ import sqlite3
 import os
 import datetime
 import time
+import asyncio
 
 import adapter
 import quoteflags
@@ -27,6 +28,7 @@ logging.basicConfig(level=logging.INFO)
 
 botIntents = discord.Intents.default()
 botIntents.message_content = True
+botIntents.reactions = True
 bot = commands.Bot(command_prefix=config["Prefix"], 
     intents = botIntents,
     activity=discord.Activity(type=discord.ActivityType.watching, name=config["Presence"]))
@@ -57,9 +59,21 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
     try:
         if(output[5]): #output[5] is file extension column.
             file = discord.File(config["Attachments"] + str(output[0]) + '.' + output[5])
-            await ctx.channel.send(file = file, content=outputString)       
+            msg = await ctx.channel.send(file = file, content=outputString)
         else:
-            await ctx.channel.send(outputString)
+            msg = await ctx.channel.send(outputString)
+        
+        async def reactionDelete(): #Put in a function for create_task
+            def check(reaction, user):
+                    return user == ctx.message.author and reaction.message == msg and reaction.emoji == '❌'
+            try:
+                reaction, user = await bot.wait_for('reaction_add', timeout=15.0, check=check)
+            except asyncio.TimeoutError:
+                print("No request for deletion.")
+            else:
+                await msg.delete()
+        
+        asyncio.create_task(reactionDelete()) #Allows for rest of function to continue going.
     except FileNotFoundError: 
         await ctx.channel.send("Attachment not found. Quote ID: " + str(output[0]))
 #[0][0] takes the zeroth result from fetchmany, and selects the zeroth column out of the row.
