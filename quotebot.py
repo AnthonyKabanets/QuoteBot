@@ -53,7 +53,7 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
         await ctx.channel.send("No valid quotes found.")
         return
 
-    outputString = str(output[1] or '') + '\n-' + output[2] + ', ' + output[4] + ", ID: " + str(output[0])
+    outputString = str(output[1] or '') + '\n-# -' + output[2] + ', ' + output[4] + ", ID: " + str(output[0])
     try:
         if(output[5]): #output[5] is file extension column.
             file = discord.File(config["Attachments"] + str(output[0]) + '.' + output[5])
