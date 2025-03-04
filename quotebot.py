@@ -93,7 +93,7 @@ async def quotedCount(ctx, quoteAuthor):
     #await ctx.message.add_reaction(emoji)
 
 @bot.command(help = "Prints the top quoted people.")
-async def quoteRank(ctx, numQuotes):
+async def quoteRank(ctx, numQuotes=5):
     cur.execute("SELECT quoteAuthor, COUNT(quoteAuthor) FROM quotes GROUP BY quoteAuthor ORDER BY COUNT(quoteAuthor) DESC LIMIT :numQuotes", {"numQuotes": numQuotes})
     rows = cur.fetchall()
     tempString = ""
