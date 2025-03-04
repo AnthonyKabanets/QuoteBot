@@ -50,6 +50,7 @@ if(cur.fetchone()[0] == 0) : {
                     fileExtension text)''')
 }
 
+@bot.command(help = "Fetches a quote.")
 async def printQuote(ctx, output): #output comes from cur.fetchone()
     if(output is None):
         await ctx.channel.send("No valid quotes found.")
@@ -83,7 +84,7 @@ async def on_ready():
     print('We have logged in as {0.user}'.format(bot))
     await bot.add_cog(aliasManager) #Adding commands from adapter.py
 
-@bot.command()
+@bot.command(help = "Prints how many times a person has been quoted.")
 async def quotedCount(ctx, quoteAuthor):
     quoteAuthor = aliasManager.fetchAlias(quoteAuthor)[1]
     cur.execute("SELECT COUNT() FROM quotes WHERE quoteAuthor = :name", {"name": quoteAuthor})
@@ -91,7 +92,7 @@ async def quotedCount(ctx, quoteAuthor):
     await ctx.channel.send(quoteAuthor + " has " + str(quoteCount) + " quotes.")
     #await ctx.message.add_reaction(emoji)
 
-@bot.command()
+@bot.command(help = "Prints the top quoted people.")
 async def quoteRank(ctx, numQuotes):
     cur.execute("SELECT quoteAuthor, COUNT(quoteAuthor) FROM quotes GROUP BY quoteAuthor ORDER BY COUNT(quoteAuthor) DESC LIMIT :numQuotes", {"numQuotes": numQuotes})
     rows = cur.fetchall()
@@ -101,28 +102,28 @@ async def quoteRank(ctx, numQuotes):
     
     await ctx.channel.send(tempString)
 
-@bot.command()
+@bot.command(help = "Prints the number of times a user has added quotes.")
 async def quoterCount(ctx, quoteRecorder):
     cur.execute("SELECT COUNT() FROM quotes WHERE quoteRecorder = :name", {"name": quoteRecorder})
     quoteCount = cur.fetchone()[0]
     await ctx.channel.send(quoteRecorder + " has recorded " + str(quoteCount) + " quotes.")
     #await ctx.message.add_reaction(emoji)
 
-@bot.command()
+@bot.command(help = "Prints the total number of quotes saved.")
 async def totalQuotes(ctx):
     cur.execute("SELECT COUNT() FROM quotes")
     quoteCount = cur.fetchone()[0]
     await ctx.channel.send(str(quoteCount) + " quotes recorded.")
     #await ctx.message.add_reaction(emoji)
 
-@bot.command()
+@bot.command(help = "Prints the quote with a specific ID.")
 async def idQuote(ctx, id):
     cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
     output = cur.fetchone()
     await printQuote(ctx, output)
     #await ctx.message.add_reaction(emoji)
 
-@bot.command()
+@bot.command(help = "Save a new quote.")
 async def addQuote(ctx, quoteAuthor, *, quote = None):
     quoteAuthor = aliasManager.fetchAlias(quoteAuthor)[1]
     try:
@@ -155,7 +156,7 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
     await ctx.channel.send("Quote #" + str(cur.lastrowid) + " saved.")
     await ctx.message.add_reaction(emoji)
 
-@bot.command()
+@bot.command(help = "Prints a random quote.")
 async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags):
     try:
         quoteAuthor = aliasManager.fetchAlias(quoteAuthor)[1]
@@ -179,7 +180,7 @@ async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags
     except Exception as e:
         print(e)
 
-@bot.command()
+@bot.command(help = "Deletes a quote with a specific ID. Requires permissions role.")
 @commands.has_role(config["Permissions Role"])
 async def deleteQuote (ctx, id):
     await ctx.channel.send("Deleting quote...")

@@ -29,7 +29,7 @@ class Alias(commands.Cog):
         
         return (True, output[0])
     
-    @commands.command()
+    @commands.command(help = "Adds an alias for a provided name, which redirects requests to another name.")
     async def addAlias(self, ctx, inputName, outputName):
         self.cur.execute("SELECT inputName, outputName FROM alias WHERE inputName=:name ", {"name": inputName})
         check = self.fetchAlias(inputName)
