@@ -29,7 +29,7 @@ emoji = config['Emoji']
 
 
 
-con = sqlite3.connect(config['Quotes'])
+con = sqlite3.connect(config['Quotes'], autocommit=False)
 helpers.initTable(con, 'quotes') #Make quotes table if it does not exist.
 
 printManager = Printer.initPrint(bot, con)
@@ -140,7 +140,7 @@ async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags
         await ctx.message.add_reaction(emoji)
     except Exception as e:
         print(e)
-    
+
 bot.run(config["Token"], reconnect=True)
 #end command lets the client know that it is a bot
 #also if connection drops, bot will attempt to reconnect
