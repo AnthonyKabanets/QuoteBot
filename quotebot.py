@@ -5,26 +5,18 @@ from discord.reaction import Reaction
 
 import logging
 import sqlite3
-import os
 import datetime
 import time
-import asyncio
 
 import quoteflags
 import alias
 import constants
 import admin
-from initTable import initTable
+import helpers
+import Printer
+from Printer import Print
 
-#ruamel is just a nicer json tbh
-#will need to install library for it first, however
-#pip install ruamel.yaml
-from ruamel.yaml import YAML
-yaml = YAML()
-
-with open("config.yaml", "r", encoding = "utf-8") as file: #utf-8 as standard
-    config = yaml.load(file)
-
+config = helpers.getConfigFile()
 logging.basicConfig(level=logging.INFO)
 
 botIntents = discord.Intents.default()
@@ -33,47 +25,24 @@ botIntents.reactions = True
 bot = commands.Bot(command_prefix=config["Prefix"], 
     intents = botIntents,
     activity=discord.Activity(type=discord.ActivityType.watching, name=config["Presence"]))
-emoji = '✅'
-aliasManager = alias.Alias(bot)
+emoji = config['Emoji']
+
+
 
 con = sqlite3.connect(config['Quotes'])
-initTable(con, 'quotes') #Make quotes table if it does not exist.
+helpers.initTable(con, 'quotes') #Make quotes table if it does not exist.
 
-adminCommands = admin.Admin(bot, con)
-
-@bot.command(help = "Fetches a quote.")
-async def printQuote(ctx, output): #output comes from cur.fetchone()
-    if(output is None):
-        await ctx.channel.send("No valid quotes found.")
-        return
-
-    outputString = str(output[1] or '') + '\n-# -' + output[2] + ', ' + output[4] + ", ID: " + str(output[0])
-    try:
-        if(output[5]): #output[5] is file extension column.
-            file = discord.File(config["Attachments"] + str(output[0]) + '.' + output[5])
-            msg = await ctx.channel.send(file = file, content=outputString)
-        else:
-            msg = await ctx.channel.send(outputString)
-        
-        async def reactionDelete(): #Put in a function for create_task
-            def check(reaction, user):
-                    return user == ctx.message.author and reaction.message == msg and reaction.emoji == '❌'
-            try:
-                reaction, user = await bot.wait_for('reaction_add', timeout=15.0, check=check)
-            except asyncio.TimeoutError:
-                print("No request for deletion.")
-            else:
-                await msg.delete()
-        
-        asyncio.create_task(reactionDelete()) #Allows for rest of function to continue going.
-    except FileNotFoundError: 
-        await ctx.channel.send("Attachment not found. Quote ID: " + str(output[0]))
-#[0][0] takes the zeroth result from fetchmany, and selects the zeroth column out of the row.
+printManager = Printer.initPrint(bot, con)
+adminManager = admin.Admin(bot, con)
+aliasManager = alias.Alias(bot)
 
 @bot.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(bot))
+    await bot.add_cog(printManager)
     await bot.add_cog(aliasManager) #Adding commands from alias.py
+    await bot.add_cog(adminManager)
+    
 
 @bot.command(help = "Prints how many times a person has been quoted.")
 async def quotedCount(ctx, quoteAuthor):
@@ -111,13 +80,7 @@ async def totalQuotes(ctx):
     await ctx.channel.send(str(quoteCount) + " quotes recorded.")
     #await ctx.message.add_reaction(emoji)
 
-@bot.command(help = "Prints the quote with a specific ID.")
-async def idQuote(ctx, id):
-    cur = con.cursor()
-    cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
-    output = cur.fetchone()
-    await printQuote(ctx, output)
-    #await ctx.message.add_reaction(emoji)
+
 
 @bot.command(help = "Save a new quote.")
 async def addQuote(ctx, quoteAuthor, *, quote = None):
@@ -125,7 +88,7 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
     try:
         date = datetime.date.today()
     except Exception as e:
-        print(e)
+        Printer(e)
     
     if ctx.message.attachments:
         if(ctx.message.attachments[0].size > constants.MAX_FILESIZE): #Capped at 8 MB. Bot cannot send files larger than 8 MB.
@@ -170,50 +133,14 @@ async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags
 
         if(output):
             for quote in output:
-                await printQuote(ctx, quote)
+                await Print.printQuote(ctx, quote)
                 time.sleep(0.3)
         else:
             await ctx.channel.send("No quotes found.")
         await ctx.message.add_reaction(emoji)
     except Exception as e:
         print(e)
-
-@bot.command(help = "Deletes a quote with a specific ID. Requires permissions role.")
-@commands.has_role(config["Permissions Role"])
-async def deleteQuote (ctx, id):
-    await ctx.channel.send("Deleting quote...")
-    await idQuote(ctx, id)
-    cur = con.cursor()
-    cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
-    output = cur.fetchone()
-    if(output is None):
-        return
-
-    if(output[5]): #Deleting saved attachment.
-        os.remove(config["Attachments"] + str(id) + "." + output[5])
-
-    cur.execute("DELETE FROM quotes WHERE id = :id", {"id": id})
-    con.commit()
-    await ctx.message.add_reaction(emoji)
-    #id is primary key, this should never delete more than one quote.
-
-@bot.event
-async def on_command_error(ctx, error):
-    if(isinstance(error, commands.MissingRole)):
-        await ctx.send("Required role missing.")
-    elif(isinstance(error, commands.CommandNotFound)):
-        await ctx.send("Command not found.")
-
-#restart the bot
-@bot.command(name ="restart", aliases = ["r"], help = "Restarts the bot.")
-@commands.has_role(config["Permissions Role"])
-async def restart(ctx): #ctx passes an argument into the body. a "context" (ctx)
-    #sends react to message as confirmation to restart
-    await ctx.message.add_reaction(emoji)
-    con.close()
-    await bot.close()
     
-
 bot.run(config["Token"], reconnect=True)
 #end command lets the client know that it is a bot
 #also if connection drops, bot will attempt to reconnect

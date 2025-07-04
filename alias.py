@@ -11,7 +11,7 @@ class Alias(commands.Cog):
         cur = self.con.cursor()
         cur.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='alias' ''')
         if(cur.fetchone()[0] == 0) : {
-            self.cur.execute('''CREATE TABLE alias
+            cur.execute('''CREATE TABLE alias
                             (inputName text NOT NULL, 
                             outputName text NOT NULL)''')
         }
@@ -22,7 +22,7 @@ class Alias(commands.Cog):
     def fetchAlias(self, inputName):
         cur = self.con.cursor()
         cur.execute("SELECT outputName FROM alias WHERE inputName=:name ", {"name": inputName})
-        output = self.cur.fetchone()
+        output = cur.fetchone()
         if output is None: #No rows matching name found.
             return (False, inputName)
         
