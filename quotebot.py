@@ -10,10 +10,10 @@ import datetime
 import time
 import asyncio
 
-import adapter
 import quoteflags
 import alias
 import constants
+import admin
 from initTable import initTable
 
 #ruamel is just a nicer json tbh
@@ -73,11 +73,12 @@ async def printQuote(ctx, output): #output comes from cur.fetchone()
 @bot.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(bot))
-    await bot.add_cog(aliasManager) #Adding commands from adapter.py
+    await bot.add_cog(aliasManager) #Adding commands from alias.py
 
 @bot.command(help = "Prints how many times a person has been quoted.")
 async def quotedCount(ctx, quoteAuthor):
     quoteAuthor = aliasManager.fetchAlias(quoteAuthor)[1]
+    cur = con.cursor()
     cur.execute("SELECT COUNT() FROM quotes WHERE quoteAuthor = :name", {"name": quoteAuthor})
     quoteCount = cur.fetchone()[0]
     await ctx.channel.send(quoteAuthor + " has " + str(quoteCount) + " quotes.")
@@ -85,6 +86,7 @@ async def quotedCount(ctx, quoteAuthor):
 
 @bot.command(help = "Prints the top quoted people.")
 async def quoteRank(ctx, numQuotes=5):
+    cur = con.cursor()
     cur.execute("SELECT quoteAuthor, COUNT(quoteAuthor) FROM quotes GROUP BY quoteAuthor ORDER BY COUNT(quoteAuthor) DESC LIMIT :numQuotes", {"numQuotes": numQuotes})
     rows = cur.fetchall()
     tempString = ""
@@ -95,6 +97,7 @@ async def quoteRank(ctx, numQuotes=5):
 
 @bot.command(help = "Prints the number of times a user has added quotes.")
 async def quoterCount(ctx, quoteRecorder):
+    cur = con.cursor()
     cur.execute("SELECT COUNT() FROM quotes WHERE quoteRecorder = :name", {"name": quoteRecorder})
     quoteCount = cur.fetchone()[0]
     await ctx.channel.send(quoteRecorder + " has recorded " + str(quoteCount) + " quotes.")
@@ -102,6 +105,7 @@ async def quoterCount(ctx, quoteRecorder):
 
 @bot.command(help = "Prints the total number of quotes saved.")
 async def totalQuotes(ctx):
+    cur = con.cursor()
     cur.execute("SELECT COUNT() FROM quotes")
     quoteCount = cur.fetchone()[0]
     await ctx.channel.send(str(quoteCount) + " quotes recorded.")
@@ -109,6 +113,7 @@ async def totalQuotes(ctx):
 
 @bot.command(help = "Prints the quote with a specific ID.")
 async def idQuote(ctx, id):
+    cur = con.cursor()
     cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
     output = cur.fetchone()
     await printQuote(ctx, output)
@@ -135,6 +140,7 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
         await ctx.channel.send("No quote provided.")
         return
     
+    cur = con.cursor()
     cur.execute("INSERT INTO quotes(quote, quoteAuthor, quoteRecorder, date, fileExtension) VALUES (?, ?, ?, ?, ?)", (quote, quoteAuthor, ctx.author.name, date, fileExtension))
 
     if(ctx.message.attachments): #Save message attachment.
@@ -155,6 +161,7 @@ async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags
         
         dateMin = datetime.datetime.strptime(flags.dateStart, flags.dateFormat).date()
         dateMax = datetime.datetime.strptime(flags.dateEnd, flags.dateFormat).date()
+        cur = con.cursor()
         cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name AND id > :idMin AND id < :idMax AND date > :dateMin AND date < :dateMax ORDER BY RANDOM() LIMIT :numQuotes", 
                     {"name": quoteAuthor, "numQuotes": numQuotes, 
                     "idMin": flags.idMin, "idMax": flags.idMax,
@@ -176,6 +183,7 @@ async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags
 async def deleteQuote (ctx, id):
     await ctx.channel.send("Deleting quote...")
     await idQuote(ctx, id)
+    cur = con.cursor()
     cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
     output = cur.fetchone()
     if(output is None):
