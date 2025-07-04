@@ -34,7 +34,7 @@ class Print(commands.Cog):
             
             async def reactionDelete(): #Put in a function for create_task
                 def check(reaction, user):
-                        return user == ctx.message.author and reaction.message == msg and reaction.emoji == '❌'
+                        return user == ctx.message.author and reaction.message == msg and reaction.emoji == getConfig("EmojiCancel")
                 try:
                     reaction, user = await ctx.bot.wait_for('reaction_add', timeout=15.0, check=check)
                 except asyncio.TimeoutError:
@@ -56,4 +56,4 @@ class Print(commands.Cog):
         cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
         output = cur.fetchone()
         await Print.printQuote(ctx, output)
-        #await ctx.message.add_reaction(emoji)
+        await ctx.message.add_reaction(getConfig("Emoji"))

@@ -24,6 +24,10 @@ Permissions Role:
 # {prefix} is a placeholder for the command prefix (it should be "watching" here)
 Presence: 
 
+#Reactions for commands.
+Emoji: '✅'
+EmojiCancel: '❌'
+
 #ID of the text channel that all log messages get sent, if needed
 #LC-ID: put your channel id here
 #You can do more than one channel, just denote it as the above

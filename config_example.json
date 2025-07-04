@@ -3,5 +3,7 @@
 	"Token": "enter token here",
 	"Quotes": "enter db name here",
 	"Attachments": "enter attachments directory here",
-	"Permissions Role": "insert role for deleting quotes here"
+	"Permissions Role": "insert role for deleting quotes here",
+	"Emoji": "✅",
+	"EmojiCancel": "❌"
 }
