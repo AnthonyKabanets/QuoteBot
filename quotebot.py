@@ -14,6 +14,7 @@ import adapter
 import quoteflags
 import alias
 import constants
+from initTable import initTable
 
 #ruamel is just a nicer json tbh
 #will need to install library for it first, however
@@ -36,19 +37,9 @@ emoji = '✅'
 aliasManager = alias.Alias(bot)
 
 con = sqlite3.connect(config['Quotes'])
-cur = con.cursor()
+initTable(con, 'quotes') #Make quotes table if it does not exist.
 
-cur.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='quotes' ''')
-
-if(cur.fetchone()[0] == 0) : {
-    cur.execute('''CREATE TABLE quotes 
-                    (id integer NOT NULL PRIMARY KEY, 
-                    quote text, 
-                    quoteAuthor text NOT NULL, 
-                    quoteRecorder text NOT NULL, 
-                    date date, 
-                    fileExtension text)''')
-}
+adminCommands = admin.Admin(bot, con)
 
 @bot.command(help = "Fetches a quote.")
 async def printQuote(ctx, output): #output comes from cur.fetchone()
