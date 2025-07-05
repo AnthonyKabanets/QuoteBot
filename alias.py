@@ -15,6 +15,7 @@ class Alias(commands.Cog):
                             (inputName text NOT NULL, 
                             outputName text NOT NULL)''')
         }
+        cur.close()
     
     #Will return a (Bool, String) tuple.
     #Bool represents whether an alias was found.
@@ -23,6 +24,7 @@ class Alias(commands.Cog):
         cur = self.con.cursor()
         cur.execute("SELECT outputName FROM alias WHERE inputName=:name ", {"name": inputName})
         output = cur.fetchone()
+        cur.close()
         if output is None: #No rows matching name found.
             return (False, inputName)
         
@@ -39,6 +41,7 @@ class Alias(commands.Cog):
         
         cur.execute("INSERT INTO alias(inputName, outputName) VALUES (?,?)", (inputName, outputName))
         self.con.commit()
+        cur.close()
         await ctx.channel.send(inputName + " is now aliased to " + outputName)
     
     @commands.command(help = "Removes an alias for a provided name.")
@@ -49,3 +52,4 @@ class Alias(commands.Cog):
         rowsDeleted = cur.fetchone()[0]
         await ctx.channel.send("Deleted " + str(rowsDeleted) + " alias(es).")
         self.con.commit()
+        cur.close()

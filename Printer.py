@@ -55,5 +55,6 @@ class Print(commands.Cog):
         cur = self.con.cursor()
         cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
         output = cur.fetchone()
+        cur.close()
         await Print.printQuote(ctx, output)
         await ctx.message.add_reaction(getConfig("Emoji"))
