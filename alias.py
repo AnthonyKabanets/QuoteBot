@@ -40,3 +40,12 @@ class Alias(commands.Cog):
         cur.execute("INSERT INTO alias(inputName, outputName) VALUES (?,?)", (inputName, outputName))
         self.con.commit()
         await ctx.channel.send(inputName + " is now aliased to " + outputName)
+    
+    @commands.command(help = "Removes an alias for a provided name.")
+    async def removeAlias(self, ctx, inputName, outputName):
+        cur = self.con.cursor()
+        cur.execute("DELETE FROM alias WHERE inputName = :inputName AND outputName = :outputName", {"inputName": inputName, "outputName": outputName})
+        cur.execute("SELECT changes()")
+        rowsDeleted = cur.fetchone()[0]
+        await ctx.channel.send("Deleted " + str(rowsDeleted) + " alias(es).")
+        self.con.commit()
