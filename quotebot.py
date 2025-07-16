@@ -6,13 +6,10 @@ from discord.reaction import Reaction
 import logging
 import sqlite3
 import datetime
-import time
 
-import quoteflags
 import constants
 import helpers
 import Printer
-from Printer import Print
 import Managers
 
 config = helpers.getConfigFile()
@@ -25,7 +22,6 @@ bot = commands.Bot(command_prefix=config["Prefix"],
     intents = botIntents,
     activity=discord.Activity(type=discord.ActivityType.watching, name=config["Presence"]))
 emoji = config['Emoji']
-
 
 
 con = sqlite3.connect(config['Quotes'], autocommit=False)
@@ -77,8 +73,6 @@ async def totalQuotes(ctx):
     await ctx.channel.send(str(quoteCount) + " quotes recorded.")
     #await ctx.message.add_reaction(emoji)
 
-
-
 @bot.command(help = "Save a new quote.")
 async def addQuote(ctx, quoteAuthor, *, quote = None):
     quoteAuthor = Managers.aliasManager.fetchAlias(quoteAuthor)[1]
@@ -113,30 +107,6 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
     await ctx.channel.send("Quote #" + str(cur.lastrowid) + " saved.")
     await ctx.message.add_reaction(emoji)
 
-@bot.command(help = "Prints a random quote.")
-async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags):
-    try:
-        quoteAuthor = Managers.aliasManager.fetchAlias(quoteAuthor)[1]
-        numQuotes = min(max(numQuotes, constants.MIN_REQUEST), constants.MAX_REQUEST) #Min is 1, max is 20.
-        
-        dateMin = datetime.datetime.strptime(flags.dateStart, flags.dateFormat).date()
-        dateMax = datetime.datetime.strptime(flags.dateEnd, flags.dateFormat).date()
-        cur = con.cursor()
-        cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name AND id > :idMin AND id < :idMax AND date > :dateMin AND date < :dateMax ORDER BY RANDOM() LIMIT :numQuotes", 
-                    {"name": quoteAuthor, "numQuotes": numQuotes, 
-                    "idMin": flags.idMin, "idMax": flags.idMax,
-                    "dateMin": dateMin, "dateMax": dateMax})
-        output = cur.fetchall()
-
-        if(output):
-            for quote in output:
-                await Print.printQuote(ctx, quote)
-                time.sleep(0.3)
-        else:
-            await ctx.channel.send("No quotes found.")
-        await ctx.message.add_reaction(config['Emoji'])
-    except Exception as e:
-        print(e)
 
 bot.run(config["Token"], reconnect=True)
 #end command lets the client know that it is a bot

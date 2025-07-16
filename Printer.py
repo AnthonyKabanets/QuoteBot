@@ -1,8 +1,13 @@
 import sqlite3
 import discord
 import asyncio
+from datetime import datetime
+import time
+from quoteflags import QuoteFlags
 from discord.ext import commands
 from helpers import getConfig
+import Managers
+import constants
 
 class Print(commands.Cog):
     def __init__(self, bot, con: sqlite3.Connection): 
@@ -45,3 +50,26 @@ class Print(commands.Cog):
         cur.close()
         await Print.printQuote(ctx, output)
         await ctx.message.add_reaction(getConfig("Emoji"))
+    
+    @commands.command(help = "Prints a random quote.")
+    async def quote(self, ctx, quoteAuthor, numQuotes = 1, *, flags: QuoteFlags):
+        try:
+            quoteAuthor = Managers.aliasManager.fetchAlias(quoteAuthor)[1]
+            numQuotes = min(max(numQuotes, constants.MIN_REQUEST), constants.MAX_REQUEST)
+            dateMin = datetime.strptime(flags.dateStart, flags.dateFormat).date()
+            dateMax = datetime.strptime(flags.dateEnd, flags.dateFormat).date()
+            cur = self.con.cursor()
+            cur.execute("SELECT * FROM quotes WHERE quoteAuthor = :name AND id > :idMin AND id < :idMax AND date > :dateMin AND date < :dateMax ORDER BY RANDOM() LIMIT :numQuotes", 
+                        {"name": quoteAuthor, "numQuotes": numQuotes, 
+                        "idMin": flags.idMin, "idMax": flags.idMax,
+                        "dateMin": dateMin, "dateMax": dateMax})
+            output = cur.fetchall()
+            if(output):
+                for quote in output:
+                    await Print.printQuote(ctx, quote)
+                    time.sleep(0.3)
+            else:
+                await ctx.channel.send("No quotes found.")
+            await ctx.message.add_reaction(getConfig('Emoji'))
+        except Exception as e:
+            print(e)
