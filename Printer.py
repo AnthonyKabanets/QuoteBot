@@ -4,16 +4,6 @@ import asyncio
 from discord.ext import commands
 from helpers import getConfig
 
-#In a separate file to avoid circular dependency with cogs that want to print quotes.
-#Can't be instantiated form main because admin needs access to printManager instance.
-printManager = None
-def initPrint(bot, con): #Should always be called from quotebot.py before any admin.py can get at it.
-    global printManager
-    printManager = Print(bot, con)
-    return printManager 
-#Feels like it should be a singleton, but singletons can't have parameters.
-#Maybe factory pattern would work better? Global object?
-
 class Print(commands.Cog):
     def __init__(self, bot, con: sqlite3.Connection): 
         self.bot = bot
@@ -45,10 +35,7 @@ class Print(commands.Cog):
             asyncio.create_task(reactionDelete()) #Allows for rest of function to continue going.
         except FileNotFoundError: 
             await ctx.channel.send("Attachment not found. Quote ID: " + str(output[0]))
-    #[0][0] takes the zeroth result from fetchmany, and selects the zeroth column out of the row.
-
-    #async def fetchID(self, id): 
-        
+    #[0][0] takes the zeroth result from fetchmany, and selects the zeroth column out of the row.  
 
     @commands.command(help = "Prints the quote with a specific ID.")
     async def idQuote(self, ctx, id):

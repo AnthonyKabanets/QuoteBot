@@ -9,12 +9,11 @@ import datetime
 import time
 
 import quoteflags
-import alias
 import constants
-import admin
 import helpers
 import Printer
 from Printer import Print
+import Managers
 
 config = helpers.getConfigFile()
 logging.basicConfig(level=logging.INFO)
@@ -32,21 +31,19 @@ emoji = config['Emoji']
 con = sqlite3.connect(config['Quotes'], autocommit=False)
 helpers.initTable(con, 'quotes') #Make quotes table if it does not exist.
 
-printManager = Printer.initPrint(bot, con)
-adminManager = admin.Admin(bot, con)
-aliasManager = alias.Alias(bot)
+Managers.initManagers(bot, con)
 
 @bot.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(bot))
-    await bot.add_cog(printManager)
-    await bot.add_cog(aliasManager) #Adding commands from alias.py
-    await bot.add_cog(adminManager)
+    await bot.add_cog(Managers.printManager)
+    await bot.add_cog(Managers.aliasManager) #Adding commands from alias.py
+    await bot.add_cog(Managers.adminManager)
     
 
 @bot.command(help = "Prints how many times a person has been quoted.")
 async def quotedCount(ctx, quoteAuthor):
-    quoteAuthor = aliasManager.fetchAlias(quoteAuthor)[1]
+    quoteAuthor = Managers.aliasManager.fetchAlias(quoteAuthor)[1]
     cur = con.cursor()
     cur.execute("SELECT COUNT() FROM quotes WHERE quoteAuthor = :name", {"name": quoteAuthor})
     quoteCount = cur.fetchone()[0]
@@ -84,7 +81,7 @@ async def totalQuotes(ctx):
 
 @bot.command(help = "Save a new quote.")
 async def addQuote(ctx, quoteAuthor, *, quote = None):
-    quoteAuthor = aliasManager.fetchAlias(quoteAuthor)[1]
+    quoteAuthor = Managers.aliasManager.fetchAlias(quoteAuthor)[1]
     try:
         date = datetime.date.today()
     except Exception as e:
@@ -119,7 +116,7 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
 @bot.command(help = "Prints a random quote.")
 async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags):
     try:
-        quoteAuthor = aliasManager.fetchAlias(quoteAuthor)[1]
+        quoteAuthor = Managers.aliasManager.fetchAlias(quoteAuthor)[1]
         numQuotes = min(max(numQuotes, constants.MIN_REQUEST), constants.MAX_REQUEST) #Min is 1, max is 20.
         
         dateMin = datetime.datetime.strptime(flags.dateStart, flags.dateFormat).date()
@@ -137,7 +134,7 @@ async def quote(ctx, quoteAuthor, numQuotes = 1, *, flags: quoteflags.QuoteFlags
                 time.sleep(0.3)
         else:
             await ctx.channel.send("No quotes found.")
-        await ctx.message.add_reaction(emoji)
+        await ctx.message.add_reaction(config['Emoji'])
     except Exception as e:
         print(e)
 

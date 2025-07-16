@@ -7,9 +7,10 @@ import Printer
 #Class for potentially destructive commands.
 class Admin(commands.Cog):
     isBlocked = False
-    def __init__(self, bot, con: sqlite3.Connection): 
+    def __init__(self, bot, con: sqlite3.Connection, printManager: Printer): 
         self.bot = bot
         self.con = con
+        self.printManager = printManager
         async def checkBlocked(ctx):
             if self.isBlocked:
                 await ctx.channel.send("Commands are currently blocked. Resolve rename first.")
@@ -20,7 +21,7 @@ class Admin(commands.Cog):
     @commands.has_role(getConfig("Permissions Role"))
     async def deleteQuote(self, ctx, id):
         await ctx.channel.send("Deleting quote...")
-        await Printer.printManager.idQuote(ctx, id)
+        await self.printManager.idQuote(ctx, id)
         cur = self.con.cursor()
         cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
         output = cur.fetchone()
