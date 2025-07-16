@@ -1,10 +1,12 @@
 import sqlite3
 from discord.ext import commands
+import helpers
 
 class Alias(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        aliasDB = "aliases.db"
+        config = helpers.getConfigFile()
+        aliasDB = config["Aliases"]
         self.con = sqlite3.connect(aliasDB)
         
         #Check if table exists, if it doesn't create it.
