@@ -11,7 +11,9 @@ import constants
 import helpers
 import Printer
 import Managers
+
 import adapter
+assert adapter, "Adapter registers SQLite datetime adapters."
 
 config = helpers.getConfigFile()
 logging.basicConfig(level=logging.INFO)
