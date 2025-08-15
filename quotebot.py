@@ -11,7 +11,8 @@ import helpers
 import Printer
 
 import adapter
-assert adapter, "Adapter registers SQLite datetime adapters."
+adapter.registerAdapters()
+adapter.registerConverters()
 
 config = helpers.getConfigFile()
 logging.basicConfig(level=logging.INFO)
@@ -47,8 +48,8 @@ async def quotedCount(ctx, quoteAuthor):
     await ctx.channel.send(quoteAuthor + " has " + str(quoteCount) + " quotes.")
     #await ctx.message.add_reaction(emoji)
 
-@bot.command(help = "Prints the top quoted people.")
-async def quoteRank(ctx, numQuotes=5):
+@bot.command(help = "Prints the top quoted people.", aliases=['quoteRank'])
+async def rank(ctx, numquotes=5):
     cur = con.cursor()
     cur.execute("SELECT quoteAuthor, COUNT(quoteAuthor) FROM quotes GROUP BY quoteAuthor ORDER BY COUNT(quoteAuthor) DESC LIMIT :numQuotes", {"numQuotes": numquotes})
     rows = cur.fetchall()

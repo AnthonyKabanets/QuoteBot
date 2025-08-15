@@ -17,9 +17,10 @@ def adapt_datetime_epoch(val):
     """Adapt datetime.datetime to Unix timestamp."""
     return int(val.timestamp())
 
-sqlite3.register_adapter(datetime.date, adapt_date_iso)
-sqlite3.register_adapter(datetime.datetime, adapt_datetime_iso)
-sqlite3.register_adapter(datetime.datetime, adapt_datetime_epoch)
+def registerAdapters():
+    sqlite3.register_adapter(datetime.date, adapt_date_iso)
+    sqlite3.register_adapter(datetime.datetime, adapt_datetime_iso)
+    sqlite3.register_adapter(datetime.datetime, adapt_datetime_epoch)
 
 def convert_date(val):
     """Convert ISO 8601 date to datetime.date object."""
@@ -33,6 +34,7 @@ def convert_timestamp(val):
     """Convert Unix epoch timestamp to datetime.datetime object."""
     return datetime.datetime.fromtimestamp(int(val))
 
-sqlite3.register_converter("date", convert_date)
-sqlite3.register_converter("datetime", convert_datetime)
-sqlite3.register_converter("timestamp", convert_timestamp)
+def registerConverters():
+    sqlite3.register_converter("date", convert_date)
+    sqlite3.register_converter("datetime", convert_datetime)
+    sqlite3.register_converter("timestamp", convert_timestamp)
