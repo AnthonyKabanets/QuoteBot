@@ -11,6 +11,7 @@ import constants
 import helpers
 import Printer
 import Managers
+import adapter
 
 config = helpers.getConfigFile()
 logging.basicConfig(level=logging.INFO)
