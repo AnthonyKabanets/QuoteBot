@@ -73,7 +73,7 @@ async def totalQuotes(ctx):
     await ctx.channel.send(str(quoteCount) + " quotes recorded.")
     #await ctx.message.add_reaction(emoji)
 
-@bot.command(help = "Save a new quote.")
+@bot.command(help = "Save a new quote.", aliases=['add','addquote'])
 async def addQuote(ctx, quoteAuthor, *, quote = None):
     quoteAuthor = Managers.aliasManager.fetchAlias(quoteAuthor)[1]
     try:
