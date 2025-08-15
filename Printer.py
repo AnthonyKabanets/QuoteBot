@@ -6,13 +6,15 @@ import time
 from quoteflags import QuoteFlags
 from discord.ext import commands
 from helpers import getConfig
-import Managers
 import constants
 
+async def setup(bot):
+    await bot.add_cog(Print(bot))
+
 class Print(commands.Cog):
-    def __init__(self, bot, con: sqlite3.Connection): 
+    def __init__(self, bot): 
         self.bot = bot
-        self.con = con
+        self.con = bot.db_connection
 
     async def printQuote(ctx, output): #output comes from cur.fetchone()
         if(output is None):
@@ -54,7 +56,7 @@ class Print(commands.Cog):
     @commands.command(help = "Prints a random quote.")
     async def quote(self, ctx, quoteAuthor, numQuotes = 1, *, flags: QuoteFlags):
         try:
-            quoteAuthor = Managers.aliasManager.fetchAlias(quoteAuthor)[1]
+            quoteAuthor = self.bot.get_cog("Alias").fetchAlias(quoteAuthor)[1]
             numQuotes = min(max(numQuotes, constants.MIN_REQUEST), constants.MAX_REQUEST)
             dateMin = datetime.strptime(flags.dateStart, flags.dateFormat).date()
             dateMax = datetime.strptime(flags.dateEnd, flags.dateFormat).date()

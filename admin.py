@@ -2,15 +2,16 @@ import sqlite3
 import os
 from discord.ext import commands
 from helpers import getConfig
-import Printer
+
+async def setup(bot):
+    await bot.add_cog(Admin(bot))
 
 #Class for potentially destructive commands.
 class Admin(commands.Cog):
     isBlocked = False
-    def __init__(self, bot, con: sqlite3.Connection, printManager: Printer): 
+    def __init__(self, bot): 
         self.bot = bot
-        self.con = con
-        self.printManager = printManager
+        self.con = bot.db_connection
         async def checkBlocked(ctx):
             if self.isBlocked:
                 await ctx.channel.send("Commands are currently blocked. Resolve rename first.")
@@ -21,7 +22,7 @@ class Admin(commands.Cog):
     @commands.has_role(getConfig("Permissions Role"))
     async def deleteQuote(self, ctx, id):
         await ctx.channel.send("Deleting quote...")
-        await self.printManager.idQuote(ctx, id)
+        await self.bot.get_cog("Print").idQuote(ctx, id)
         cur = self.con.cursor()
         cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
         output = cur.fetchone()
@@ -33,6 +34,7 @@ class Admin(commands.Cog):
 
         cur.execute("DELETE FROM quotes WHERE id = :id", {"id": id})
         self.con.commit()
+        cur.close()
         await ctx.message.add_reaction(getConfig('Emoji'))
         #id is primary key, this should never delete more than one quote.
     

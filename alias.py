@@ -2,6 +2,9 @@ import sqlite3
 from discord.ext import commands
 import helpers
 
+async def setup(bot):
+    await bot.add_cog(Alias(bot))
+
 class Alias(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
