@@ -84,8 +84,10 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
         Printer(e)
     
     if ctx.message.attachments:
-        if(ctx.message.attachments[0].size > constants.MAX_FILESIZE): #Capped at 8 MB. Bot cannot send files larger than 8 MB.
-            await ctx.message.send("This file is too large.")
+        if(ctx.message.attachments[0].size > constants.MAX_FILESIZE):
+            receivedSize = str(ctx.message.attachments[0].size/1000000)
+            maxSize = str(constants.MAX_FILESIZE/1000000)
+            await ctx.channel.send("This file is too large. (Received Size: " + receivedSize + " MB, Max Size: " + maxSize + " MB)")
             return
 
         fileExtension = ctx.message.attachments[0].filename #Probably a better way to do this, but I don't know how.
