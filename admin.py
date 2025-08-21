@@ -29,10 +29,11 @@ class Admin(commands.Cog):
         if(output is None):
             return
 
-        if(output[5]): #Deleting saved attachment.
+        if(output[4]): #Deleting saved attachment.
             os.remove(getConfig("Attachments") + str(id) + "." + output[5])
 
         cur.execute("DELETE FROM quotes WHERE id = :id", {"id": id})
+        cur.execute("DELETE FROM authors WHERE id = :id", {"id": id})
         self.con.commit()
         cur.close()
         await ctx.message.add_reaction(getConfig('Emoji'))
@@ -53,7 +54,7 @@ class Admin(commands.Cog):
         self.isBlocked = True
         cur = self.con.cursor()
         #cur.execute("BEGIN TRANSACTION")
-        cur.execute("UPDATE quotes SET quoteAuthor = :newName WHERE quoteAuthor = :originalName", {"originalName": originalName, "newName": newName})
+        cur.execute("UPDATE authors SET author = :newName WHERE author = :originalName", {"originalName": originalName, "newName": newName})
         cur.execute("SELECT changes()")
         rowsChanged = cur.fetchone()[0]
         message = await ctx.channel.send("This will make changes to " + str(rowsChanged) + " rows.\n" + \

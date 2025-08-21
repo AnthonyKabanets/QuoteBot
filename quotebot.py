@@ -43,7 +43,7 @@ async def on_ready():
 async def quotedCount(ctx, quoteAuthor):
     quoteAuthor = bot.get_cog("Alias").fetchAlias(quoteAuthor)[1]
     cur = con.cursor()
-    cur.execute("SELECT COUNT() FROM quotes WHERE quoteAuthor = :name", {"name": quoteAuthor})
+    cur.execute("SELECT COUNT() FROM authors WHERE author = :name", {"name": quoteAuthor})
     quoteCount = cur.fetchone()[0]
     await ctx.channel.send(quoteAuthor + " has " + str(quoteCount) + " quotes.")
     #await ctx.message.add_reaction(emoji)
@@ -51,7 +51,7 @@ async def quotedCount(ctx, quoteAuthor):
 @bot.command(help = "Prints the top quoted people.", aliases=['quoteRank'])
 async def rank(ctx, numquotes=5):
     cur = con.cursor()
-    cur.execute("SELECT quoteAuthor, COUNT(quoteAuthor) FROM quotes GROUP BY quoteAuthor ORDER BY COUNT(quoteAuthor) DESC LIMIT :numQuotes", {"numQuotes": numquotes})
+    cur.execute("SELECT author, COUNT(author) FROM authors GROUP BY author ORDER BY COUNT(author) DESC LIMIT :numQuotes", {"numQuotes": numquotes})
     rows = cur.fetchall()
     tempString = ""
     for row in rows:
@@ -77,7 +77,11 @@ async def totalQuotes(ctx):
 
 @bot.command(help = "Save a new quote.", aliases=['add','addquote'])
 async def addQuote(ctx, quoteAuthor, *, quote = None):
-    quoteAuthor = bot.get_cog("Alias").fetchAlias(quoteAuthor)[1]
+    authorList = quoteAuthor.split(',')
+    aliasList = []
+    for author in authorList:
+        aliasList.append(bot.get_cog("Alias").fetchAlias(author)[1])
+    authorList = aliasList
     try:
         date = datetime.date.today()
     except Exception as e:
@@ -99,16 +103,21 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
         return
     
     cur = con.cursor()
-    cur.execute("INSERT INTO quotes(quote, quoteAuthor, quoteRecorder, date, fileExtension) VALUES (?, ?, ?, ?, ?)", (quote, quoteAuthor, ctx.author.name, date, fileExtension))
+    cur.execute("INSERT INTO quotes(quote, quoteRecorder, date, fileExtension) VALUES (?, ?, ?, ?)", (quote, ctx.author.name, date, fileExtension))
+    cur.execute("SELECT last_insert_rowid()")
+    output = cur.fetchone()
+    quoteID = output[0]
+    for author in authorList:
+        cur.execute("INSERT INTO authors(id, author) VALUES (?, ?)", (quoteID, author))
 
     if(ctx.message.attachments): #Save message attachment.
-        await ctx.message.attachments[0].save(config["Attachments"] + str(cur.lastrowid) + '.' + fileExtension)
+        await ctx.message.attachments[0].save(config["Attachments"] + str(quoteID) + '.' + fileExtension)
         #Attachment filename is based on unique id of the quote.
         #Saved files will never have the same filename.
         #Only one attachment can be saved per quote.
 
     con.commit()
-    await ctx.channel.send("Quote #" + str(cur.lastrowid) + " saved.")
+    await ctx.channel.send("Quote #" + str(quoteID) + " saved.")
     await ctx.message.add_reaction(emoji)
 
 @bot.command(help = "Reload extensions.")

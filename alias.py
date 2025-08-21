@@ -1,5 +1,6 @@
 import sqlite3
 from discord.ext import commands
+from discord import app_commands
 import helpers
 
 async def setup(bot):
