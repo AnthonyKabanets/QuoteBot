@@ -75,6 +75,38 @@ async def totalQuotes(ctx):
     await ctx.channel.send(str(quoteCount) + " quotes recorded.")
     #await ctx.message.add_reaction(emoji)
 
+import mimetypes
+async def parseAttachments(ctx, quoteID, cursor):
+    for attachment in ctx.message.attachments:
+        if(attachment.size > constants.MAX_FILESIZE):
+            receivedSize = str(attachment.size/1000000)
+            maxSize = str(constants.MAX_FILESIZE/1000000)
+            await ctx.channel.send("This file is too large. (Received Size: " + receivedSize + " MB, Max Size: " + maxSize + " MB)")
+            return -1
+    
+    index = 0
+    for attachment in ctx.message.attachments:
+        fileType = ctx.message.attachments[0].content_type
+        fileExtension = mimetypes.guess_extension(fileType, strict=False)
+        if fileExtension is None:
+            ctx.channel.send("Couldn't parse file extension.")
+            raise "Couldn't parse file extension."
+
+        fileName = str(quoteID)
+        fileIndex = None
+        if index > 0: 
+            fileIndex = index
+            fileName += "_" + str(index)
+        fileName += fileExtension
+        row = (quoteID, fileIndex, fileExtension)
+        cursor.execute("INSERT INTO attachments(id, fileIndex, extension) VALUES (?, ?, ?)", row)
+        index += 1
+        
+        await attachment.save(config["Attachments"] + fileName)
+    #fileExtension = ctx.message.attachments[0].filename #Probably a better way to do this, but I don't know how.
+    #fileExtension = fileExtension.rsplit('.', 1)[-1] #All text after last dot. If filename has no dot, entire filename will be saved. This is bad.
+    
+
 @bot.command(help = "Save a new quote.", aliases=['add','addquote'])
 async def addQuote(ctx, quoteAuthor, *, quote = None):
     authorList = quoteAuthor.split(',')
@@ -85,40 +117,36 @@ async def addQuote(ctx, quoteAuthor, *, quote = None):
     try:
         date = datetime.date.today()
     except Exception as e:
-        Printer(e)
+        print(e)
     
-    if ctx.message.attachments:
-        if(ctx.message.attachments[0].size > constants.MAX_FILESIZE):
-            receivedSize = str(ctx.message.attachments[0].size/1000000)
-            maxSize = str(constants.MAX_FILESIZE/1000000)
-            await ctx.channel.send("This file is too large. (Received Size: " + receivedSize + " MB, Max Size: " + maxSize + " MB)")
-            return
-
-        fileExtension = ctx.message.attachments[0].filename #Probably a better way to do this, but I don't know how.
-        fileExtension = fileExtension.rsplit('.', 1)[-1] #All text after last dot. If filename has no dot, entire filename will be saved. This is bad.
-    elif quote:
-        fileExtension = None
-    else:
+    if not ctx.message.attachments and not quote:
         await ctx.channel.send("No quote provided.")
         return
     
-    cur = con.cursor()
-    cur.execute("INSERT INTO quotes(quote, quoteRecorder, date, fileExtension) VALUES (?, ?, ?, ?)", (quote, ctx.author.name, date, fileExtension))
-    cur.execute("SELECT last_insert_rowid()")
-    output = cur.fetchone()
-    quoteID = output[0]
-    for author in authorList:
-        cur.execute("INSERT INTO authors(id, author) VALUES (?, ?)", (quoteID, author))
+    try:
+        cur = con.cursor()
+        cur.execute("INSERT INTO quotes(quote, quoteRecorder, date) VALUES (?, ?, ?)", (quote, ctx.author.name, date))
+        cur.execute("SELECT last_insert_rowid()")
+        output = cur.fetchone()
+        quoteID = output[0]
+        for author in authorList:
+            cur.execute("INSERT INTO authors(id, author) VALUES (?, ?)", (quoteID, author))
 
-    if(ctx.message.attachments): #Save message attachment.
-        await ctx.message.attachments[0].save(config["Attachments"] + str(quoteID) + '.' + fileExtension)
+        if ctx.message.attachments:
+            res = await parseAttachments(ctx, quoteID, cur)
+            if res == -1:
+                con.rollback()
+                return
         #Attachment filename is based on unique id of the quote.
         #Saved files will never have the same filename.
-        #Only one attachment can be saved per quote.
 
-    con.commit()
-    await ctx.channel.send("Quote #" + str(quoteID) + " saved.")
-    await ctx.message.add_reaction(emoji)
+        con.commit()
+        await ctx.channel.send("Quote #" + str(quoteID) + " saved.")
+        await ctx.message.add_reaction(emoji)
+    except Exception as e:
+        con.rollback()
+        raise e
+
 
 @bot.command(help = "Reload extensions.")
 async def refreshCommands(ctx):

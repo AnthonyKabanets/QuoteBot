@@ -16,8 +16,12 @@ def initTable(con: Connection, tableName):
         
         cur.execute('''CREATE TABLE "authors" (
 	                    id integer NOT NULL,
-	                    author text NOT NULL
-                    ''')
+	                    author text NOT NULL)''')
+        
+        cur.execute('''CREATE TABLE "attachments" (
+                    "id"	INTEGER NOT NULL,
+                    "fileIndex"	TEXT,
+                    "extension"	TEXT NOT NULL)''')
 
 from ruamel.yaml import YAML
 with open("config.yaml", "r", encoding = "utf-8") as file: #utf-8 as standard
