@@ -18,7 +18,7 @@ class Admin(commands.Cog):
             return not self.isBlocked
         bot.add_check(checkBlocked)
         
-    @commands.command(help = "Deletes a quote with a specific ID. Requires permissions role.")
+    @commands.command(help = "Deletes a quote with a specific ID.")
     @commands.has_role(getConfig("Permissions Role"))
     async def deleteQuote(self, ctx, id):
         await ctx.channel.send("Deleting quote...")
@@ -28,11 +28,14 @@ class Admin(commands.Cog):
         output = cur.fetchone()
         if(output is None):
             return
-
-        if(output[5]): #Deleting saved attachment.
-            os.remove(getConfig("Attachments") + str(id) + "." + output[5])
+        
+        attachments = self.bot.get_cog("Print").genAttachmentStrings(id)
+        for fileName in attachments:
+            os.remove(getConfig("Attachments") + fileName)
 
         cur.execute("DELETE FROM quotes WHERE id = :id", {"id": id})
+        cur.execute("DELETE FROM authors WHERE id = :id", {"id": id})
+        cur.execute("DELETE FROM attachments WHERE id = :id", {"id": id})
         self.con.commit()
         cur.close()
         await ctx.message.add_reaction(getConfig('Emoji'))
@@ -53,7 +56,7 @@ class Admin(commands.Cog):
         self.isBlocked = True
         cur = self.con.cursor()
         #cur.execute("BEGIN TRANSACTION")
-        cur.execute("UPDATE quotes SET quoteAuthor = :newName WHERE quoteAuthor = :originalName", {"originalName": originalName, "newName": newName})
+        cur.execute("UPDATE authors SET author = :newName WHERE author = :originalName", {"originalName": originalName, "newName": newName})
         cur.execute("SELECT changes()")
         rowsChanged = cur.fetchone()[0]
         message = await ctx.channel.send("This will make changes to " + str(rowsChanged) + " rows.\n" + \
