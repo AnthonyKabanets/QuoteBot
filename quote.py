@@ -9,9 +9,9 @@ from helpers import getConfig
 import constants
 
 async def setup(bot):
-    await bot.add_cog(Print(bot))
+    await bot.add_cog(Quote(bot))
 
-class Print(commands.Cog):
+class Quote(commands.Cog):
     def __init__(self, bot): 
         self.bot = bot
         self.con = bot.db_connection
@@ -79,9 +79,9 @@ class Print(commands.Cog):
         output = cur.fetchone()
         cur.close()
         
-        authors = Print.genAuthorString(self.con, id)
+        authors = Quote.genAuthorString(self.con, id)
         attachments = self.genAttachmentStrings(id)
-        await Print.printQuote(ctx, output, authors, attachments)
+        await Quote.printQuote(ctx, output, authors, attachments)
         await ctx.message.add_reaction(getConfig("Emoji"))
     
     @commands.command(help = "Prints a random quote.")
@@ -102,9 +102,9 @@ class Print(commands.Cog):
             output = cur.fetchall()
             if(output):
                 for quote in output:
-                    authors = Print.genAuthorString(self.con, quote[0])
+                    authors = quote.genAuthorString(self.con, quote[0])
                     attachments = self.genAttachmentStrings(quote[0])
-                    await Print.printQuote(ctx, quote, authors, attachments)
+                    await quote.printQuote(ctx, quote, authors, attachments)
                     time.sleep(0.3)
             else:
                 await ctx.channel.send("No quotes found.")

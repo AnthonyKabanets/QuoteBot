@@ -22,14 +22,14 @@ class Admin(commands.Cog):
     @commands.has_role(getConfig("Permissions Role"))
     async def deleteQuote(self, ctx, id):
         await ctx.channel.send("Deleting quote...")
-        await self.bot.get_cog("Print").idQuote(ctx, id)
+        await self.bot.get_cog("Quote").idQuote(ctx, id)
         cur = self.con.cursor()
         cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
         output = cur.fetchone()
         if(output is None):
             return
         
-        attachments = self.bot.get_cog("Print").genAttachmentStrings(id)
+        attachments = self.bot.get_cog("Quote").genAttachmentStrings(id)
         for fileName in attachments:
             os.remove(getConfig("Attachments") + fileName)
 

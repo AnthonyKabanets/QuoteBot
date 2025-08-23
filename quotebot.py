@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
 
 import logging
 import sqlite3
@@ -8,7 +7,7 @@ import datetime
 
 import constants
 import helpers
-import Printer
+import quote
 
 import adapter
 adapter.registerAdapters()
@@ -30,7 +29,7 @@ con = sqlite3.connect(config['Quotes'], autocommit=False)
 bot.db_connection = con
 
 helpers.initTable(con, 'quotes') #Make quotes table if it does not exist.
-extensions = ["alias", "Printer", "admin"]
+extensions = ["alias", "quote", "admin"]
 
 @bot.event
 async def on_ready():
