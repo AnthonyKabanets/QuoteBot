@@ -39,7 +39,7 @@ class Quote(commands.Cog):
     @commands.command(help = "Prints the number of times a user has added quotes.")
     async def quoterCount(self, ctx, quoteRecorder):
         cur = self.con.cursor()
-        cur.execute("SELECT COUNT() FROM quotes WHERE quoteRecorder = :name", {"name": quoteRecorder})
+        cur.execute("SELECT COUNT() FROM quotes WHERE quoteRecorder = :name", {"name": quoteRecorder.lower()})
         quoteCount = cur.fetchone()[0]
         await ctx.channel.send(quoteRecorder + " has recorded " + str(quoteCount) + " quotes.")
         #await ctx.message.add_reaction(emoji)
