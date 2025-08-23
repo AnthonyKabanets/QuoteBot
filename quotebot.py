@@ -3,11 +3,7 @@ from discord.ext import commands
 
 import logging
 import sqlite3
-import datetime
-
-import constants
 import helpers
-import quote
 
 import adapter
 adapter.registerAdapters()

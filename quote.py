@@ -1,6 +1,7 @@
 import discord
 import asyncio
 from datetime import datetime
+from datetime import date
 import time
 from quoteflags import QuoteFlags
 from discord.ext import commands
@@ -88,10 +89,12 @@ class Quote(commands.Cog):
         for author in authorList:
             aliasList.append(self.bot.get_cog("Alias").fetchAlias(author)[1])
         authorList = aliasList
+        today = 0
         try:
-            date = datetime.date.today()
+            today = date.today()
         except Exception as e:
             print(e)
+            raise e
         
         if not ctx.message.attachments and not quote:
             await ctx.channel.send("No quote provided.")
@@ -99,7 +102,7 @@ class Quote(commands.Cog):
         
         try:
             cur = self.con.cursor()
-            cur.execute("INSERT INTO quotes(quote, quoteRecorder, date) VALUES (?, ?, ?)", (quote, ctx.author.name, date))
+            cur.execute("INSERT INTO quotes(quote, quoteRecorder, date) VALUES (?, ?, ?)", (quote, ctx.author.name, today))
             cur.execute("SELECT last_insert_rowid()")
             output = cur.fetchone()
             quoteID = output[0]
