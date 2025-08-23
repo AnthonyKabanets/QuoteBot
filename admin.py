@@ -1,4 +1,3 @@
-import sqlite3
 import os
 from discord.ext import commands
 from helpers import getConfig
@@ -31,7 +30,10 @@ class Admin(commands.Cog):
         
         attachments = self.bot.get_cog("Quote").genAttachmentStrings(id)
         for fileName in attachments:
-            os.remove(getConfig("Attachments") + fileName)
+            try:
+                os.remove(getConfig("Attachments") + fileName)
+            except OSError:
+                await ctx.channel.send("Couldn't locate attachment. Deleting anyway.")
 
         cur.execute("DELETE FROM quotes WHERE id = :id", {"id": id})
         cur.execute("DELETE FROM authors WHERE id = :id", {"id": id})
