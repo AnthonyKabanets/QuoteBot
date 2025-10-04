@@ -81,7 +81,24 @@ class Quote(commands.Cog):
             
             await attachment.save(getConfig("Attachments") + fileName)
     
+    @commands.command(help = "Add an author to an existing quote.")
+    async def addAuthor(self, ctx, quoteID, quoteAuthor):
+        cur= self.con.cursor()
+        cur.execute("SELECT count(authors.id) FROM authors WHERE authors.id = :id", {"id": quoteID})
+        idCount = cur.fetchone()[0]
+        if idCount == 0:
+            await ctx.channel.send("No quote with chosen ID exists.")
+            return
+        
+        cur.execute("SELECT count(authors.id) FROM authors WHERE authors.id = :id AND authors.author = :author", {"id": quoteID, "author": quoteAuthor})
+        idCount = cur.fetchone()[0]
+        if idCount > 0:
+            await ctx.channel.send("Quote already attributed to this author.")
+            return
 
+        cur.execute("INSERT INTO authors(id, author) VALUES (?, ?)", (quoteID, quoteAuthor))
+        await ctx.message.add_reaction(getConfig("Emoji"))
+    
     @commands.command(help = "Save a new quote.", aliases=['add','addquote'])
     async def addQuote(self, ctx, quoteAuthor, *, quote = None):
         authorList = quoteAuthor.split(',')
