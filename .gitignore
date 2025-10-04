@@ -2,3 +2,5 @@ config.*
 *.db
 __pycache__
 Attachments
+*workspace
+.vs
