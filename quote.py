@@ -106,6 +106,7 @@ class Quote(commands.Cog):
         for author in authorList:
             aliasList.append(self.bot.get_cog("Alias").fetchAlias(author)[1])
         authorList = aliasList
+        
         today = 0
         try:
             today = date.today()
@@ -134,6 +135,12 @@ class Quote(commands.Cog):
             #Attachment filename is based on unique id of the quote.
             #Saved files will never have the same filename.
 
+            messageLen = len(Quote.genQuoteString(quote, quoteAuthor, str(today), quoteID)) + len(authorList)
+            if constants.MAX_LENGTH < messageLen:
+                #Using quoteAuthor instead of authorList to include commas.
+                await ctx.channel.send("Message too long!")
+                raise Exception("Message too long!")
+
             self.con.commit()
             await ctx.channel.send("Quote #" + str(quoteID) + " saved.")
             await ctx.message.add_reaction(getConfig("Emoji"))
@@ -141,12 +148,15 @@ class Quote(commands.Cog):
             self.con.rollback()
             raise e
 
+    def genQuoteString(quote: str, authors: str, date: str, id: int):
+        return str(quote or '') + '\n-# -' + authors + ', ' + date + ", ID: " + str(id)       
+
     async def printQuote(ctx, output, authors, attachments): #output comes from cur.fetchone()
         if(output is None):
             await ctx.channel.send("No valid quotes found.")
             return
         
-        outputString = str(output[1] or '') + '\n-# -' + authors + ', ' + output[4] + ", ID: " + str(output[0])
+        outputString = Quote.genQuoteString(output[1], authors, output[4], output[0])
         try:
             if len(attachments) > 0:
                 files = []
