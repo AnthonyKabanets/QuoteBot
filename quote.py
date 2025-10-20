@@ -3,11 +3,12 @@ import asyncio
 from datetime import datetime
 from datetime import date
 import time
-from quoteflags import QuoteFlags, AddFlags
+from quoteflags import QuoteFlags
 from discord.ext import commands
 from helpers import getConfig
 import constants
-import mimetypes
+from helpers import QuoteHelpers
+from typing import Optional
 
 async def setup(bot):
     await bot.add_cog(Quote(bot))
@@ -35,6 +36,7 @@ class Quote(commands.Cog):
         for row in rows:
             tempString += ("Name: " + str(row[0]) + "\n    Quotes: " + str(row[1]) + "\n")
         
+        cur.close()
         await ctx.send(tempString)
 
     @commands.command(help = "Prints the number of times a user has added quotes.")
@@ -42,6 +44,7 @@ class Quote(commands.Cog):
         cur = self.con.cursor()
         cur.execute("SELECT COUNT() FROM quotes WHERE quoteRecorder = :name", {"name": quoteRecorder.lower()})
         quoteCount = cur.fetchone()[0]
+        cur.close()
         await ctx.channel.send(quoteRecorder + " has recorded " + str(quoteCount) + " quotes.")
         #await ctx.message.add_reaction(emoji)
 
@@ -50,37 +53,12 @@ class Quote(commands.Cog):
         cur = self.con.cursor()
         cur.execute("SELECT COUNT() FROM quotes")
         quoteCount = cur.fetchone()[0]
+        cur.close()
         await ctx.channel.send(str(quoteCount) + " quotes recorded.")
         #await ctx.message.add_reaction(emoji)
     
-    async def parseAttachments(ctx, quoteID, cursor):
-        for attachment in ctx.message.attachments:
-            if(attachment.size > constants.MAX_FILESIZE):
-                receivedSize = str(attachment.size/1000000)
-                maxSize = str(constants.MAX_FILESIZE/1000000)
-                await ctx.channel.send("This file is too large. (Received Size: " + receivedSize + " MB, Max Size: " + maxSize + " MB)")
-                return -1
-        
-        index = 0
-        for attachment in ctx.message.attachments:
-            fileType = ctx.message.attachments[0].content_type
-            fileExtension = mimetypes.guess_extension(fileType, strict=False)
-            if fileExtension is None:
-                ctx.channel.send("Couldn't parse file extension.")
-                raise "Couldn't parse file extension."
-
-            fileName = str(quoteID)
-            fileIndex = None
-            if index > 0: 
-                fileIndex = index
-                fileName += "_" + str(index)
-            fileName += fileExtension
-            row = (quoteID, fileIndex, fileExtension)
-            cursor.execute("INSERT INTO attachments(id, fileIndex, extension) VALUES (?, ?, ?)", row)
-            index += 1
-            
-            await attachment.save(getConfig("Attachments") + fileName)
-    
+    #This could push a very long quote past the length limit. 
+    #TODO: Check messageLenInBounds before allowing.
     @commands.command(help = "Add an author to an existing quote.")
     async def addAuthor(self, ctx, quoteID, quoteAuthor):
         cur= self.con.cursor()
@@ -97,10 +75,11 @@ class Quote(commands.Cog):
             return
 
         cur.execute("INSERT INTO authors(id, author) VALUES (?, ?)", (quoteID, quoteAuthor))
+        cur.close()
         await ctx.message.add_reaction(getConfig("Emoji"))
     
     @commands.command(help = "Save a new quote.", aliases=['add','addquote'])
-    async def addQuote(self, ctx, quoteAuthor, flags: AddFlags, *, quote = None):
+    async def addQuote(self, ctx, quoteAuthor, id: Optional[int] = -1, *, quote = None):
         authorList = quoteAuthor.split(',')
         aliasList = []
         for author in authorList:
@@ -118,33 +97,16 @@ class Quote(commands.Cog):
             await ctx.channel.send("No quote provided.")
             return
 
-        try:
-            cur = self.con.cursor()
-            if flags.id != -1:
-                cur.execute("SELECT count(authors.id) FROM authors WHERE authors.id = :id", {"id": flags.id})
-                quoteCount = cur.fetchone()[0]
-                if quoteCount != 0:
-                    await ctx.channel.send("ID already present.")
-                    raise Exception("Tried to add already present ID.")
-                cur.execute("INSERT INTO quotes(quote, quoteRecorder, date, id) VALUES (?, ?, ?, ?)", (quote, ctx.author.name, today, flags.id))
-            else:
-                cur.execute("INSERT INTO quotes(quote, quoteRecorder, date) VALUES (?, ?, ?)", (quote, ctx.author.name, today))
-            
-            cur.execute("SELECT last_insert_rowid()")
-            output = cur.fetchone()
-            quoteID = output[0]
-            for author in authorList:
-                cur.execute("INSERT INTO authors(id, author) VALUES (?, ?)", (quoteID, author))
+        if id != -1 and QuoteHelpers.idAlreadyUsed(self.con, id):
+            ctx.channel.send("ID already in use.")
+            return
 
-            if ctx.message.attachments:
-                res = await Quote.parseAttachments(ctx, quoteID, cur)
-                if res == -1:
-                    self.con.rollback()
-                    return
+        try:
+            quoteID = await QuoteHelpers.insertQuote(ctx, self.con, authorList, quote, today, id)
             #Attachment filename is based on unique id of the quote.
             #Saved files will never have the same filename.
 
-            messageLen = len(Quote.genQuoteString(quote, quoteAuthor, str(today), quoteID)) + len(authorList)
+            messageLen = len(QuoteHelpers.genQuoteString(quote, quoteAuthor, str(today), quoteID)) + len(authorList)
             if constants.MAX_LENGTH < messageLen:
                 #Using quoteAuthor instead of authorList to include commas.
                 await ctx.channel.send("Message too long!")
@@ -157,15 +119,12 @@ class Quote(commands.Cog):
             self.con.rollback()
             raise e
 
-    def genQuoteString(quote: str, authors: str, date: str, id: int):
-        return str(quote or '') + '\n-# -' + authors + ', ' + date + ", ID: " + str(id)       
-
     async def printQuote(ctx, output, authors, attachments): #output comes from cur.fetchone()
         if(output is None):
             await ctx.channel.send("No valid quotes found.")
             return
         
-        outputString = Quote.genQuoteString(output[1], authors, output[4], output[0])
+        outputString = QuoteHelpers.genQuoteString(output[1], authors, output[4], output[0])
         try:
             if len(attachments) > 0:
                 files = []
@@ -190,32 +149,6 @@ class Quote(commands.Cog):
             await ctx.channel.send("Attachment not found. Quote ID: " + str(output[0]))
     #[0][0] takes the zeroth result from fetchmany, and selects the zeroth column out of the row.  
 
-    def genAuthorString(con, id):
-        cur = con.cursor()
-        cur.execute("SELECT author FROM authors WHERE authors.id = :id", {"id": id})
-        authorList = cur.fetchall()
-        cur.close()
-        if len(authorList) == 0: 
-            return ""
-        authorString = authorList[0][0]
-        for author in authorList[1:]:
-             authorString += ", " + author[0]
-        return authorString
-
-    def genAttachmentStrings(self, id):
-        cur = self.con.cursor()
-        cur.execute("SELECT fileIndex, extension FROM attachments WHERE attachments.id = :id", {"id": id})
-        output = cur.fetchall()
-        cur.close()
-        fileNames = []
-        for file in output:
-            if file[0]:
-                fileName = str(id) + "_" + str(file[0]) + file[1]
-            else:
-                fileName = str(id) + file[1]
-            fileNames.append(fileName)
-        return fileNames
-
     @commands.command(help = "Prints the quote with a specific ID.")
     async def idQuote(self, ctx, id):
         cur = self.con.cursor()
@@ -223,8 +156,8 @@ class Quote(commands.Cog):
         output = cur.fetchone()
         cur.close()
         
-        authors = Quote.genAuthorString(self.con, id)
-        attachments = self.genAttachmentStrings(id)
+        authors = QuoteHelpers.genAuthorString(self.con, id)
+        attachments = QuoteHelpers.genAttachmentStrings(self.con, id)
         await Quote.printQuote(ctx, output, authors, attachments)
         await ctx.message.add_reaction(getConfig("Emoji"))
     
@@ -246,8 +179,8 @@ class Quote(commands.Cog):
             output = cur.fetchall()
             if(output):
                 for quote in output:
-                    authors = Quote.genAuthorString(self.con, quote[0])
-                    attachments = self.genAttachmentStrings(quote[0])
+                    authors = QuoteHelpers.genAuthorString(self.con, quote[0])
+                    attachments = QuoteHelpers.genAttachmentStrings(self.con, quote[0])
                     await Quote.printQuote(ctx, quote, authors, attachments)
                     time.sleep(0.3)
             else:

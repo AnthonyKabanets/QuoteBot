@@ -1,6 +1,6 @@
 import os
 from discord.ext import commands
-from helpers import getConfig
+from helpers import getConfig, QuoteHelpers
 
 async def setup(bot):
     await bot.add_cog(Admin(bot))
@@ -28,7 +28,7 @@ class Admin(commands.Cog):
         if(output is None):
             return
         
-        attachments = self.bot.get_cog("Quote").genAttachmentStrings(id)
+        attachments = QuoteHelpers.genAttachmentStrings(self.con, id)
         for fileName in attachments:
             try:
                 os.remove(getConfig("Attachments") + fileName)
