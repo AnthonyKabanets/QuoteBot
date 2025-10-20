@@ -79,7 +79,10 @@ class Quote(commands.Cog):
         await ctx.message.add_reaction(getConfig("Emoji"))
     
     @commands.command(help = "Save a new quote.", aliases=['add','addquote'])
-    async def addQuote(self, ctx, quoteAuthor, id: Optional[int] = -1, *, quote = None):
+    async def addQuote(self, ctx, id: Optional[int], quoteAuthor, *, quote = None):
+        if not id: #Optional id prevents any author from having a purely numerical name.
+            id = -1
+        
         authorList = quoteAuthor.split(',')
         aliasList = []
         for author in authorList:
