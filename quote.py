@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime
 from datetime import date
 import time
-from quoteflags import QuoteFlags
+from quoteflags import QuoteFlags, AddFlags
 from discord.ext import commands
 from helpers import getConfig
 import constants
@@ -100,7 +100,7 @@ class Quote(commands.Cog):
         await ctx.message.add_reaction(getConfig("Emoji"))
     
     @commands.command(help = "Save a new quote.", aliases=['add','addquote'])
-    async def addQuote(self, ctx, quoteAuthor, *, quote = None):
+    async def addQuote(self, ctx, quoteAuthor, flags: AddFlags, *, quote = None):
         authorList = quoteAuthor.split(',')
         aliasList = []
         for author in authorList:
@@ -117,10 +117,19 @@ class Quote(commands.Cog):
         if not ctx.message.attachments and not quote:
             await ctx.channel.send("No quote provided.")
             return
-        
+
         try:
             cur = self.con.cursor()
-            cur.execute("INSERT INTO quotes(quote, quoteRecorder, date) VALUES (?, ?, ?)", (quote, ctx.author.name, today))
+            if flags.id != -1:
+                cur.execute("SELECT count(authors.id) FROM authors WHERE authors.id = :id", {"id": flags.id})
+                quoteCount = cur.fetchone()[0]
+                if quoteCount != 0:
+                    await ctx.channel.send("ID already present.")
+                    raise Exception("Tried to add already present ID.")
+                cur.execute("INSERT INTO quotes(quote, quoteRecorder, date, id) VALUES (?, ?, ?, ?)", (quote, ctx.author.name, today, flags.id))
+            else:
+                cur.execute("INSERT INTO quotes(quote, quoteRecorder, date) VALUES (?, ?, ?)", (quote, ctx.author.name, today))
+            
             cur.execute("SELECT last_insert_rowid()")
             output = cur.fetchone()
             quoteID = output[0]
