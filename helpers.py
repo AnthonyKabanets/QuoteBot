@@ -61,8 +61,10 @@ class QuoteHelpers:
         
         cur.close()
         return id
-        
-    async def parseAttachments(ctx, quoteID, cursor):
+    
+    #parseAttachments will not commit changes to DB, user should do so.
+    #This should be changed to return a list of attachments that can be saved immediately.
+    async def parseAttachments(ctx, quoteID, con):
         for attachment in ctx.message.attachments:
             if(attachment.size > constants.MAX_FILESIZE):
                 receivedSize = str(attachment.size/1000000)
@@ -85,7 +87,9 @@ class QuoteHelpers:
                 fileName += "_" + str(index)
             fileName += fileExtension
             row = (quoteID, fileIndex, fileExtension)
+            cursor = con.cursor()
             cursor.execute("INSERT INTO attachments(id, fileIndex, extension) VALUES (?, ?, ?)", row)
+            cursor.close()
             index += 1
             
             await attachment.save(getConfig("Attachments") + fileName)

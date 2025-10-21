@@ -78,6 +78,31 @@ class Quote(commands.Cog):
         cur.close()
         await ctx.message.add_reaction(getConfig("Emoji"))
     
+    #Edit text or attachments of a quote without changing the ID, dates, or authors.
+    @commands.command(help = "Edit text or attachments of an existing quote.", aliases=['edit'])
+    async def editQuote(self, ctx, id, *, quote = None):
+        cur = self.con.cursor()
+        cur.execute("SELECT * FROM quotes WHERE id = :id", {"id": id})
+        quoteRow = cur.fetchone()
+        #Check quote row to keep metadata, no need to check attachments row.
+        #cur.execute("SELECT * FROM attachments WHERE id = :id", {"id": id})
+        #attachmentRow = cur.fetchall()
+
+        cur.execute("DELETE FROM quotes WHERE id = :id", {"id": id})
+        cur.execute("DELETE FROM attachments WHERE id = :id", {"id": id})
+        quoteRecorder = quoteRow[2]
+        quoteDate = quoteRow[3]
+        try:
+            cur.execute("INSERT INTO quotes(quote, quoteRecorder, date, id) VALUES (?, ?, ?, ?)", (quote, quoteRecorder, quoteDate, id))
+            if ctx.message.attachments:
+                await QuoteHelpers.parseAttachments(ctx, id, self.con)
+        except Exception as e:
+            self.con.rollback()
+            raise e
+        cur.close()
+        self.con.commit()
+        await ctx.message.add_reaction(getConfig("Emoji"))
+
     @commands.command(help = "Save a new quote.", aliases=['add','addquote'])
     async def addQuote(self, ctx, id: Optional[int], quoteAuthor, *, quote = None):
         if not id: #Optional id prevents any author from having a purely numerical name.
