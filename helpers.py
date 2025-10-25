@@ -54,7 +54,7 @@ class QuoteHelpers:
             cur.execute("INSERT INTO authors(id, author) VALUES (?, ?)", (id, author))
         
         if ctx.message.attachments:
-            res = await QuoteHelpers.parseAttachments(ctx, id, cur)
+            res = await QuoteHelpers.parseAttachments(ctx, id, con)
             if res == -1:
                 con.rollback()
                 return -1
