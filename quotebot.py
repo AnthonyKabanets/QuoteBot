@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.INFO)
 botIntents = discord.Intents.default()
 botIntents.message_content = True
 botIntents.reactions = True
+botIntents.polls = True
 bot = commands.Bot(command_prefix=config["Prefix"], 
     intents = botIntents,
     activity=discord.Activity(type=discord.ActivityType.watching, name=config["Presence"]))
@@ -25,7 +26,7 @@ con = sqlite3.connect(config['Quotes'], autocommit=False)
 bot.db_connection = con
 
 helpers.initTable(con, 'quotes') #Make quotes table if it does not exist.
-extensions = ["alias", "quote", "admin"]
+extensions = ["alias", "quote", "admin", "polls"]
 
 @bot.event
 async def on_ready():
