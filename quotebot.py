@@ -24,7 +24,7 @@ emoji = config['Emoji']
 con = sqlite3.connect(config['Quotes'], autocommit=False)
 bot.db_connection = con
 
-helpers.initTable(con, 'quotes') #Make quotes table if it does not exist.
+helpers.initTable(con) #Make quotes table if it does not exist.
 extensions = ["alias", "quote", "admin"]
 
 @bot.event
