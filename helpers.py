@@ -11,8 +11,7 @@ def initTable(con: Connection, tableName):
                         (id integer NOT NULL PRIMARY KEY, 
                         quote text, 
                         quoteRecorder text NOT NULL, 
-                        date date, 
-                        fileExtension text)''', {"table": tableName})
+                        date date)''', {"table": tableName})
         
         cur.execute('''CREATE TABLE "authors" (
 	                    id integer NOT NULL,
