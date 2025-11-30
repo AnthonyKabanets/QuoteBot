@@ -28,9 +28,14 @@ class Quote(commands.Cog):
         #await ctx.message.add_reaction(emoji)
 
     @commands.command(help = "Prints the top quoted people.", aliases=['quoteRank'])
-    async def rank(self, ctx, numquotes=5):
+    async def rank(self, ctx, *, flags: QuoteFlags):
+        if flags.count == 1: 
+            flags.count = 5
         cur = self.con.cursor()
-        cur.execute("SELECT author, COUNT(author) FROM authors GROUP BY author ORDER BY COUNT(author) DESC LIMIT :numQuotes", {"numQuotes": numquotes})
+        cur.execute("SELECT author, COUNT(author), date FROM authors JOIN quotes ON authors.id = quotes.id \
+                    WHERE date > :dateMin AND date < :dateMax GROUP BY author \
+                    ORDER BY COUNT(author) DESC LIMIT :numAuthors", 
+                    {"numAuthors": flags.count, "dateMin": flags.dateStart, "dateMax": flags.dateEnd})
         rows = cur.fetchall()
         tempString = ""
         for row in rows:
