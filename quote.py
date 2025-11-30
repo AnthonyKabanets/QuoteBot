@@ -31,11 +31,13 @@ class Quote(commands.Cog):
     async def rank(self, ctx, *, flags: QuoteFlags):
         if flags.count == 1: 
             flags.count = 5
+        dateMin = datetime.strptime(flags.dateStart, flags.dateFormat).date()
+        dateMax = datetime.strptime(flags.dateEnd, flags.dateFormat).date()
         cur = self.con.cursor()
         cur.execute("SELECT author, COUNT(author), date FROM authors JOIN quotes ON authors.id = quotes.id \
-                    WHERE date > :dateMin AND date < :dateMax GROUP BY author \
+                    WHERE date > :dateMin GROUP BY author \
                     ORDER BY COUNT(author) DESC LIMIT :numAuthors", 
-                    {"numAuthors": flags.count, "dateMin": flags.dateStart, "dateMax": flags.dateEnd})
+                    {"numAuthors": flags.count, "dateMin": dateMin, "dateMax": dateMax})
         rows = cur.fetchall()
         tempString = ""
         for row in rows:
