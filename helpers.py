@@ -3,7 +3,7 @@ from sqlite3 import Connection
 #Check for a table, create it if it doesn't exist.
 def initTable(con: Connection):
     cur = con.cursor()
-    cur.execute('''CREATE TABLE IF NOT EXISTS "quote" 
+    cur.execute('''CREATE TABLE IF NOT EXISTS "quotes" 
                     (id integer NOT NULL PRIMARY KEY, 
                     quote text, 
                     quoteRecorder text NOT NULL, 
