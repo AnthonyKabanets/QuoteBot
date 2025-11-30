@@ -190,10 +190,10 @@ class Quote(commands.Cog):
         await ctx.message.add_reaction(getConfig("Emoji"))
     
     @commands.command(help = "Prints a random quote.")
-    async def quote(self, ctx, quoteAuthor, numQuotes = 1, *, flags: QuoteFlags):
+    async def quote(self, ctx, quoteAuthor, *, flags: QuoteFlags):
         try:
             quoteAuthor = self.bot.get_cog("Alias").fetchAlias(quoteAuthor)[1]
-            numQuotes = min(max(numQuotes, constants.MIN_REQUEST), constants.MAX_REQUEST)
+            numQuotes = min(max(flags.count, constants.MIN_REQUEST), constants.MAX_REQUEST)
             dateMin = datetime.strptime(flags.dateStart, flags.dateFormat).date()
             dateMax = datetime.strptime(flags.dateEnd, flags.dateFormat).date()
             cur = self.con.cursor()
