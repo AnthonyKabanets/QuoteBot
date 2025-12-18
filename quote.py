@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime
 from datetime import date
 import time
-from quoteflags import QuoteFlags
+from quoteflags import QuoteFlags, QuoteMetadata
 from discord.ext import commands
 from helpers import getConfig
 import constants
@@ -223,3 +223,24 @@ class Quote(commands.Cog):
             await ctx.message.add_reaction(getConfig('Emoji'))
         except Exception as e:
             print(e)
+    
+    @commands.command(help = "Set date or recorder for a quote.")
+    async def updateMetadata(self, ctx, id, *, flags: QuoteMetadata):
+        cur = self.con.cursor()
+        cur.execute("SELECT date, quoteRecorder FROM quotes WHERE id = :id", {"id": id})
+        output = cur.fetchone()
+        
+        if flags.date == "":
+            date = output[0]
+        else:
+            date = datetime.strptime(flags.date, flags.dateFormat).date()
+        
+        if flags.recorder == "":
+            flags.recorder = output[1]
+
+        cur.execute("UPDATE quotes SET date = :date, quoteRecorder = :recorder WHERE id = :id", 
+                    {"date": date, "recorder": flags.recorder, "id": id})
+        
+        cur.close()
+        self.con.commit()
+        await ctx.message.add_reaction(getConfig('Emoji'))
