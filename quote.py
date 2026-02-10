@@ -83,6 +83,21 @@ class Quote(commands.Cog):
 
         cur.execute("INSERT INTO authors(id, author) VALUES (?, ?)", (quoteID, quoteAuthor))
         cur.close()
+        self.con.commit()
+        await ctx.message.add_reaction(getConfig("Emoji"))
+    
+    @commands.command(help = "Remove an author from an existing quote. Can cause quotes to have no author.")
+    async def removeAuthor(self, ctx, quoteID, quoteAuthor):
+        cur = self.con.cursor()
+        cur.execute("SELECT count(authors.id) FROM authors WHERE authors.id = :id AND authors.author = :author", {"id": quoteID, "author": quoteAuthor})
+        idCount = cur.fetchone()[0]
+        if idCount == 0:
+            await ctx.channel.send("Quote already not attributed to this author.")
+            return
+        
+        cur.execute("DELETE FROM authors WHERE authors.id = :id AND authors.author = :author", {"id": quoteID, "author": quoteAuthor})
+        cur.close()
+        self.con.commit()
         await ctx.message.add_reaction(getConfig("Emoji"))
     
     #Edit text or attachments of a quote without changing the ID, dates, or authors.
