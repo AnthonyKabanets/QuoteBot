@@ -52,7 +52,7 @@ class Admin(commands.Cog):
         self.con.close()
         await self.bot.close()
     
-    @commands.command(name ="rename", help = "Renames a quote author. No effect on aliases.")
+    @commands.command(name ="rename", help = "Renames all uses of a quote author. No effect on aliases.")
     @commands.has_role(getConfig("Permissions Role"))
     async def rename(self, ctx, originalName, newName): 
         self.isBlocked = True
