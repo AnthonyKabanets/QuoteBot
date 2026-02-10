@@ -100,6 +100,19 @@ class Quote(commands.Cog):
         self.con.commit()
         await ctx.message.add_reaction(getConfig("Emoji"))
     
+    @commands.command(help = "Replaces all authors on a quote.")
+    async def editAuthors(self, ctx, quoteID, authors):
+        cur = self.con.cursor()
+        cur.execute("DELETE FROM authors WHERE authors.id = :id", {"id": quoteID})
+        
+        authorList = authors.split(',')
+        for author in authorList:
+            alias = self.bot.get_cog("Alias").fetchAlias(author)[1]
+            cur.execute("INSERT INTO authors(id, author) VALUES (?, ?)", (quoteID, alias))
+        cur.close()
+        self.con.commit()
+        await ctx.message.add_reaction(getConfig("Emoji"))
+    
     #Edit text or attachments of a quote without changing the ID, dates, or authors.
     @commands.command(help = "Edit text or attachments of an existing quote.", aliases=['edit'])
     async def editQuote(self, ctx, id, *, quote = None):
